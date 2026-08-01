@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config';
+---
+
+<Base title={`404 — ${SITE.name}`} description="Ticker not found.">
+  <section class="page nf">
+    <p class="mono code">404</p>
+    <h1>ticker not found</h1>
+    <p class="mono sub">
+      this symbol was delisted, or never traded here.
+      <a href="/">return to the floor ↗</a>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    min-height: 55vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .code {
+    color: var(--ask);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.6rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .sub { font-size: 13px; color: var(--ink-dim); }
+  .sub a { color: var(--accent); margin-left: 8px; }
+</style>

@@ -1,17 +1,194 @@
 ---
+import Base from '../layouts/Base.astro';
+import OrderBook from '../islands/orderbook/OrderBook';
+import { SITE } from '../config';
+import asksData from '../data/asks.json';
+import expData from '../data/experience.json';
+import { getCollection } from 'astro:content';
 
+const posts = (await getCollection('blog'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 5);
+
+const marketConfig = {
+  ticker: SITE.ticker,
+  chain: SITE.chain,
+  solAddress: SITE.solAddress,
+  usdcMint: SITE.usdcMint,
+  rpc: SITE.rpc,
+  bookingUrl: SITE.bookingUrl,
+  email: SITE.email,
+};
+
+const positions = expData.positions as {
+  role: string;
+  org: string;
+  start: string;
+  end: string;
+  line: string;
+}[];
+
+const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base>
+  <!-- ── intro ── -->
+  <section class="page intro">
+    <h1>Liron Katsif</h1>
+    <div class="intro-side mono">
+      <p>engineer.</p>
+      <p>my time trades below.</p>
+      <p>the market never closes.</p>
+    </div>
+  </section>
+
+  <!-- ── market ── -->
+  <section class="page" id="market">
+    <h2 class="sec"><b>01</b> market</h2>
+    <OrderBook client:load asks={asksData.levels} config={marketConfig} />
+    <p class="mono how">
+      how it works — the red side is real hours I've put up for sale. click
+      one, pay in USDC on Solana, and the trade prints when the transfer
+      confirms on-chain. the green side is bids: name your price and I fill
+      the ones I like.
+    </p>
+  </section>
+
+  <!-- ── experience ── -->
+  <section class="page" id="experience">
+    <h2 class="sec"><b>02</b> experience</h2>
+    {
+      positions.length === 0 ? (
+        <div class="undisclosed mono">
+          <span>positions: undisclosed</span>
+          <span>— filings pending —</span>
+        </div>
+      ) : (
+        <ol class="positions">
+          {positions.map((p) => (
+            <li>
+              <span class="mono dates">
+                {p.start}–{p.end}
+              </span>
+              <span class="role">
+                {p.role} · {p.org}
+              </span>
+              <span class="line">{p.line}</span>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </section>
+
+  <!-- ── writing ── -->
+  <section class="page" id="writing">
+    <h2 class="sec"><b>03</b> writing</h2>
+    <ol class="posts">
+      {
+        posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+            <span class="mono date">{fmtDate(post.data.date)}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <a class="mono all" href="/blog">all posts ↗</a>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    padding-block: clamp(64px, 12vh, 140px) clamp(48px, 8vh, 96px);
+  }
+  h1 {
+    font-size: clamp(2.8rem, 8vw, 5.6rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    text-wrap: balance;
+    max-width: 12ch;
+  }
+  .intro-side {
+    font-size: 13px;
+    color: var(--ink-dim);
+    line-height: 1.9;
+    text-align: right;
+    padding-bottom: 10px;
+  }
+  .intro-side p:last-child { color: var(--accent); }
+
+  section.page + section.page { margin-top: 88px; }
+
+  .how {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    max-width: 74ch;
+    line-height: 1.7;
+  }
+
+  .undisclosed {
+    display: flex;
+    justify-content: space-between;
+    padding: 22px 18px;
+    border: 1px dashed var(--hairline-strong);
+    border-radius: var(--radius);
+    color: var(--ink-faint);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .positions {
+    list-style: none;
+  }
+  .positions li {
+    display: grid;
+    grid-template-columns: 140px 1fr 1.4fr;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 14px;
+  }
+  .positions .dates { color: var(--ink-faint); font-size: 12px; }
+  .positions .role { font-weight: 500; }
+  .positions .line { color: var(--ink-dim); }
+
+  .posts { list-style: none; }
+  .posts li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .posts a {
+    text-decoration: none;
+    font-size: 16px;
+  }
+  .posts a:hover { color: var(--accent); }
+  .posts .date { color: var(--ink-faint); font-size: 12px; white-space: nowrap; }
+  .all {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .all:hover { color: var(--accent); }
+
+  @media (max-width: 720px) {
+    .intro { flex-direction: column; align-items: flex-start; }
+    .intro-side { text-align: left; }
+    .positions li { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>

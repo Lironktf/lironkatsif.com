@@ -1,0 +1,63 @@
+---
+title: This site is an order book
+description: Why my personal site has a bid/ask spread, and how the LIRON/USDC market works under the hood.
+date: 2026-08-01
+---
+
+Most personal sites have a contact form. Mine has a matching engine's little cousin.
+
+The centerpiece of this site is **LIRON/USDC** — a live order book where the
+asset is my time. It works like any book you'd see on an exchange, just
+smaller and more honest:
+
+- **The asks (red)** are real. Each level is a block of hours I've decided to
+  sell at that price, straight from a JSON file I edit. When you click one,
+  you get a Solana Pay QR code. Pay in USDC and the site watches the chain
+  for your transfer — when it confirms, the trade prints on the tape and the
+  ask size drops.
+- **The bids (green)** are indicative. Name a price below the market and the
+  bid rests in the book (and lands in my inbox). I fill the ones I like.
+  Sometimes the spread is where the interesting conversations happen.
+- **The tape** is the receipt log. No fake volume: if the book looks quiet,
+  it's because it is. There's a *demo feed* toggle that streams simulated
+  activity so you can watch the book move — everything it generates is
+  tagged `demo`.
+
+## Why
+
+Pricing your time is awkward, so most people don't do it in public. But a
+posted price is information: it tells you exactly when it's worth someone's
+while to talk to me, and it tells me exactly what my weekend priority rate
+should be. A one-sided price felt incomplete, though. Markets have two sides.
+Letting visitors bid means the price of my time is negotiated in the open,
+the way it should be.
+
+Also — and I want to be honest about the ordering of motivations here — an
+order book is just a cooler hero section than a headshot.
+
+## How
+
+The site is [Astro](https://astro.build) with exactly one React island: the
+book. Everything else is static HTML. The Solana machinery
+(`@solana/web3.js`, `@solana/pay`) is lazy-imported only when you open a buy
+ticket, so reading this post costs you zero web3 bytes.
+
+Payments are direct wallet-to-wallet USDC transfers on Solana — no payment
+processor, no fees, no custody. Each checkout generates a unique reference
+key that gets attached to the transfer, and the client polls RPC until a
+transaction carrying that reference lands. `validateTransfer` then checks
+the recipient, mint and amount before the site calls it a fill.
+
+A note on what this isn't: it's not a token, there's nothing to flip, and
+buying an hour entitles you to exactly one thing — an hour. The SEC has
+enough on its plate.
+
+## The look
+
+The design brief was two words: *Bloomberg, blueprint.* Near-black with one
+amber accent, Geist Mono with tabular figures for every number, hairline
+borders, a faint dot grid, scanlines on the terminal panel. Green and red
+appear only where they mean something — bid and ask.
+
+If you'd like to argue about any of this, the market is right there.
+Cheapest hour wins.
