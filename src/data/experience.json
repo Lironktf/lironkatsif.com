@@ -1,0 +1,4 @@
+{
+  "_comment": "One entry per position: { role, org, start, end, line }. Empty array renders the UNDISCLOSED empty state.",
+  "positions": []
+}

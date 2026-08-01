@@ -21,6 +21,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "astro": "^7.1.6",
+    "bignumber.js": "^11.1.5",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

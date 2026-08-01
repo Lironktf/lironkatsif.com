@@ -1,0 +1,10 @@
+{
+  "_comment": "The sell side of the book. Each level is real, bookable time: `size` hours available at `price` USDC per hour. Edit freely — the book re-renders from this file.",
+  "levels": [
+    { "price": 180, "size": 2, "note": "office hour — questions, reviews, advice" },
+    { "price": 220, "size": 3, "note": "pairing — we build together" },
+    { "price": 260, "size": 2, "note": "deep work — I take a problem away" },
+    { "price": 340, "size": 2, "note": "weekend / rush priority" },
+    { "price": 500, "size": 1, "note": "the last hour — when everything else is gone" }
+  ]
+}

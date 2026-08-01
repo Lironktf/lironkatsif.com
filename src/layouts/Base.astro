@@ -1,0 +1,183 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+import { SITE } from '../config';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = SITE.title, description = SITE.description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, SITE.url);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.png', SITE.url)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <header class="page top">
+      <a href="/" class="mono glyph" aria-label="Home">LK<span>▞</span></a>
+      <nav class="mono" aria-label="Main">
+        <a href="/#market">Market</a>
+        <a href="/#experience">Experience</a>
+        <a href="/blog">Writing</a>
+      </nav>
+      <div class="mono utc" aria-hidden="true">
+        <span class="dot"></span>
+        <time id="utc-clock">--:--:--</time> UTC
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="page foot mono">
+      <div class="foot-grid">
+        <div>
+          <span class="k">Contact</span>
+          <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+          <a href={SITE.github}>github/Lironktf</a>
+        </div>
+        <div>
+          <span class="k">Terms</span>
+          <p>
+            An hour is 60 minutes of video call or pairing, scheduled within 14
+            days of fill. Unused fills refunded on request. Not investment
+            advice; not an investment — you are buying time, nothing else.
+          </p>
+        </div>
+        <div>
+          <span class="k">Colophon</span>
+          <p>
+            Set in Geist &amp; Geist Mono. Built with Astro, one React island,
+            and USDC on Solana. No purple gradients were harmed.
+          </p>
+        </div>
+      </div>
+      <div class="foot-line">
+        <span>© {new Date().getFullYear()} {SITE.name}</span>
+        <span>LIRON/USDC · market never closes</span>
+      </div>
+    </footer>
+
+    <script>
+      const el = document.getElementById('utc-clock');
+      const tick = () => {
+        if (el) el.textContent = new Date().toISOString().slice(11, 19);
+      };
+      tick();
+      setInterval(tick, 1000);
+    </script>
+
+    <style>
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        padding-block: 20px;
+        border-bottom: 1px solid var(--hairline);
+        font-size: 12px;
+      }
+      .glyph {
+        text-decoration: none;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--ink);
+      }
+      .glyph span {
+        color: var(--accent);
+        margin-left: 2px;
+      }
+      nav {
+        display: flex;
+        gap: 20px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      nav a {
+        text-decoration: none;
+        color: var(--ink-dim);
+      }
+      nav a:hover {
+        color: var(--accent);
+      }
+      .utc {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink-dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--bid);
+        animation: pulse 2.4s var(--ease-out) infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.25; }
+      }
+
+      .foot {
+        margin-top: 96px;
+        padding-block: 32px 40px;
+        border-top: 1px solid var(--hairline);
+        font-size: 12px;
+        color: var(--ink-dim);
+      }
+      .foot-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr 2fr;
+        gap: 32px;
+      }
+      .foot-grid .k {
+        display: block;
+        color: var(--ink-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-bottom: 10px;
+      }
+      .foot-grid a {
+        display: block;
+        width: fit-content;
+        color: var(--ink-dim);
+        text-decoration: none;
+        margin-bottom: 4px;
+      }
+      .foot-grid a:hover { color: var(--accent); }
+      .foot-grid p { line-height: 1.6; }
+      .foot-line {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        color: var(--ink-faint);
+      }
+      @media (max-width: 720px) {
+        .top { gap: 16px; flex-wrap: wrap; }
+        .utc { display: none; }
+        .foot-grid { grid-template-columns: 1fr; }
+        .foot-line { flex-direction: column; gap: 6px; }
+      }
+    </style>
+  </body>
+</html>
