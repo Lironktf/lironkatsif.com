@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bid, Level, MarketConfig, Trade } from './types';
-import type { PaymentSession } from './solana';
 import './orderbook.css';
+
+const WalletPay = lazy(() => import('./WalletPay'));
 
 const BIDS_KEY = 'lk.bids';
 const TRADES_KEY = 'lk.trades';
@@ -79,11 +80,9 @@ function Row(props: {
 type TicketMode = { kind: 'buy'; level: Level; qty: number } | { kind: 'bid' } | null;
 type PayState =
   | { s: 'idle' }
-  | { s: 'loading' }
-  | { s: 'pay'; session: PaymentSession }
+  | { s: 'checkout' }
   | { s: 'confirmed'; sig: string }
-  | { s: 'unconfigured' }
-  | { s: 'error'; msg: string };
+  | { s: 'unconfigured' };
 
 export default function OrderBook(props: { asks: Level[]; config: MarketConfig }) {
   const { config } = props;
@@ -96,7 +95,6 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
   const [ticket, setTicket] = useState<TicketMode>(null);
   const [pay, setPay] = useState<PayState>({ s: 'idle' });
   const [bidForm, setBidForm] = useState({ price: '', size: '1.0', note: '' });
-  const sessionRef = useRef<PaymentSession | null>(null);
 
   // hydrate persisted state after mount (island is client-rendered but be safe)
   useEffect(() => {
@@ -183,60 +181,37 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
 
   // ── buy flow ─────────────────────────────────────────────────
   const openBuy = (level: Level) => {
-    sessionRef.current?.abort();
     setPay({ s: 'idle' });
     setTicket({ kind: 'buy', level, qty: 1 });
   };
 
-  const startCheckout = useCallback(async () => {
+  const startCheckout = () => {
     if (ticket?.kind !== 'buy') return;
-    if (!config.solAddress) {
-      setPay({ s: 'unconfigured' });
-      return;
-    }
-    setPay({ s: 'loading' });
-    try {
-      const { startPayment } = await import('./solana');
-      const amount = ticket.level.price * ticket.qty;
-      const session = await startPayment({
-        recipient: config.solAddress,
-        amount,
-        usdcMint: config.usdcMint,
-        rpc: config.rpc,
-        label: `${config.ticker} — ${ticket.qty}h`,
-        message: `${ticket.qty}h of Liron's time @ ${ticket.level.price} USDC/h`,
-        onConfirmed: (sig) => {
-          setTrades((ts) => [
-            {
-              id: uid(),
-              side: 'buy',
-              price: ticket.level.price,
-              size: ticket.qty,
-              ts: Date.now(),
-              sig,
-            },
-            ...ts,
-          ]);
-          setAsks((as) =>
-            as.map((a) =>
-              a.price === ticket.level.price
-                ? { ...a, size: Math.max(0, a.size - ticket.qty) }
-                : a,
-            ),
-          );
-          setPay({ s: 'confirmed', sig });
-        },
-        onError: () =>
-          setPay({ s: 'error', msg: 'transfer found but failed validation — email me with your tx signature' }),
-      });
-      sessionRef.current = session;
-      setPay({ s: 'pay', session });
-    } catch (err) {
-      setPay({ s: 'error', msg: 'could not build payment — try again or email me' });
-    }
-  }, [ticket, config]);
+    setPay(config.solAddress ? { s: 'checkout' } : { s: 'unconfigured' });
+  };
 
-  useEffect(() => () => sessionRef.current?.abort(), []);
+  const handleFill = (sig: string) => {
+    if (ticket?.kind !== 'buy') return;
+    setTrades((ts) => [
+      {
+        id: uid(),
+        side: 'buy',
+        price: ticket.level.price,
+        size: ticket.qty,
+        ts: Date.now(),
+        sig,
+      },
+      ...ts,
+    ]);
+    setAsks((as) =>
+      as.map((a) =>
+        a.price === ticket.level.price
+          ? { ...a, size: Math.max(0, a.size - ticket.qty) }
+          : a,
+      ),
+    );
+    setPay({ s: 'confirmed', sig });
+  };
 
   // ── bid flow ─────────────────────────────────────────────────
   const placeBid = () => {
@@ -256,8 +231,6 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
   };
 
   const closeTicket = () => {
-    sessionRef.current?.abort();
-    sessionRef.current = null;
     setPay({ s: 'idle' });
     setTicket(null);
   };
@@ -452,27 +425,18 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                   buy {hrs(ticket.qty)}h @ {px(ticket.level.price)}
                 </button>
               )}
-              {pay.s === 'loading' && (
-                <button type="button" className="exec mono" disabled>
-                  building payment…
-                </button>
-              )}
-              {pay.s === 'pay' && (
-                <div className="pay">
-                  <img src={pay.session.qr} alt="Solana Pay QR code" width={116} height={116} />
-                  <div className="pay-meta mono">
-                    <a href={pay.session.url}>open in wallet ↗</a>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard?.writeText(pay.session.url)}
-                    >
-                      copy payment link
-                    </button>
-                    <span className="waiting">
-                      <i /> watching solana for your transfer…
-                    </span>
-                  </div>
-                </div>
+              {pay.s === 'checkout' && (
+                <Suspense
+                  fallback={<p className="mono pay-loading">loading payment rails…</p>}
+                >
+                  <WalletPay
+                    amount={ticket.level.price * ticket.qty}
+                    label={`${config.ticker} — ${hrs(ticket.qty)}h`}
+                    message={`${hrs(ticket.qty)}h of Liron's time @ ${px(ticket.level.price)} USDC/h`}
+                    config={config}
+                    onConfirmed={handleFill}
+                  />
+                </Suspense>
               )}
               {pay.s === 'confirmed' && (
                 <div className="filled mono" role="status">
@@ -503,12 +467,6 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                       email me and consider it filled ↗
                     </a>
                   </p>
-                </div>
-              )}
-              {pay.s === 'error' && (
-                <div className="offline mono" role="alert">
-                  <b>order rejected</b>
-                  <p>{pay.msg}</p>
                 </div>
               )}
               <button type="button" className="cancel mono" onClick={closeTicket}>

@@ -23,22 +23,36 @@ The centerpiece is a live order book where the asset is my time:
 
 ### Payment flow
 
-Direct wallet-to-wallet USDC on Solana via `@solana/pay` — no processor, no
-fees, no custody. Each checkout generates a unique reference key; the client
-polls RPC (`findReference`) until a transaction carrying it lands, then
-`validateTransfer` checks recipient, mint and amount before the fill prints.
-All web3 code is lazy-imported — it costs zero bytes until someone opens a
-buy ticket.
+Direct wallet-to-wallet USDC on Solana — no processor, no fees, no custody.
+Two rails at checkout:
+
+- **Wallet** — any Wallet Standard wallet (Phantom, Solflare, Backpack…) is
+  auto-detected; connect and pay in one click. The transaction is built with
+  `@solana/pay`'s `createTransfer` (reference key + memo included) and sent
+  straight from the connected wallet.
+- **QR code** — a Solana Pay request for phones or the walletless. The client
+  polls RPC (`findReference`) until a transaction carrying the reference
+  lands, then `validateTransfer` checks recipient, mint and amount before the
+  fill prints.
+
+All web3 and wallet-adapter code is lazy-imported — it costs zero bytes until
+someone opens a buy ticket.
 
 ![buy ticket](docs/screenshots/04-buy-ticket.png)
+![wallet rail](docs/screenshots/12-wallet-rail.png)
+![qr rail](docs/screenshots/13-qr-rail.png)
 ![bid ticket](docs/screenshots/06-bid-ticket.png)
+
+*(The payment-rail screenshots were captured with a placeholder wallet
+address in `config.ts`; the repo ships with it empty.)*
 
 ## Stack
 
 - [Astro](https://astro.build) — static output, MDX blog, Shiki (`vesper`),
   native cross-document view transitions
 - One React island: [`src/islands/orderbook`](src/islands/orderbook)
-- `@solana/web3.js` + `@solana/pay` + `qrcode` (lazy-loaded)
+- `@solana/web3.js` + `@solana/pay` + `@solana/wallet-adapter-react` +
+  `qrcode` (all lazy-loaded)
 - Geist Sans / Geist Mono, self-hosted via Fontsource
 - Plain CSS custom properties — no framework
 

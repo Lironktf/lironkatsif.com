@@ -1,0 +1,139 @@
+/* payment rails inside the buy ticket */
+
+.wp {
+  margin-top: 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+}
+
+.wp-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--hairline);
+}
+.wp-tabs button {
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease-out);
+}
+.wp-tabs button:first-child { border-right: 1px solid var(--hairline); }
+.wp-tabs button.act { color: var(--accent); background: var(--accent-dim); }
+
+.wp-body { padding: 12px; }
+
+.wp-note {
+  font-size: 11px;
+  color: var(--ink-dim);
+  line-height: 1.6;
+}
+
+.wp-wallets { display: flex; flex-direction: column; gap: 8px; }
+.wp-wallet {
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: none;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease-out), color var(--fast) var(--ease-out);
+}
+.wp-wallet:hover { border-color: var(--accent); color: var(--accent); }
+.wp-wallet img { border-radius: 2px; }
+.wp-wallet:disabled { opacity: 0.6; cursor: wait; }
+
+.wp-connected .wp-note {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.wp-key { color: var(--bid); }
+.wp-disconnect {
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.wp-disconnect:hover { color: var(--ask); }
+
+.wp-pay {
+  font: inherit;
+  font-family: var(--mono);
+  width: 100%;
+  padding: 10px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: filter var(--fast) var(--ease-out), transform var(--fast) var(--ease-out);
+}
+.wp-pay:hover { filter: brightness(1.1); }
+.wp-pay:active { transform: translateY(1px); }
+
+.wp-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+.wp-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ob-pulse 1.2s var(--ease-out) infinite;
+}
+
+.wp-err {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ask);
+  line-height: 1.5;
+}
+
+.wp-qr { display: flex; gap: 14px; align-items: flex-start; }
+.wp-qr img {
+  border-radius: 2px;
+  border: 1px solid var(--hairline-strong);
+}
+.wp-qr-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+}
+.wp-qr-meta a { color: var(--accent); }
+.wp-qr-meta button {
+  font: inherit;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ink-faint);
+}
