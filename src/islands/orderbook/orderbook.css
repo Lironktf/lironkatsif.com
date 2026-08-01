@@ -116,6 +116,13 @@
   border-left: 1px solid var(--hairline);
 }
 @media (max-width: 900px) {
+  .ob-head { flex-wrap: wrap; gap: 10px 20px; }
+  .stats { flex-wrap: wrap; gap: 12px 18px; }
+  .head-right {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
   .ob-grid { grid-template-columns: 1fr; }
   .ob-grid > section + section {
     border-left: none;
@@ -124,6 +131,7 @@
 }
 
 .cols {
+  column-gap: 12px;
   display: grid;
   grid-template-columns: 1.2fr 1fr 0.8fr;
   padding: 10px 18px 6px;
@@ -140,6 +148,7 @@
 .asks, .bids { display: flex; flex-direction: column; }
 
 .ob-row {
+  column-gap: 12px;
   position: relative;
   display: grid;
   grid-template-columns: 1.2fr 1fr 0.8fr;
@@ -403,6 +412,7 @@
   padding: 0 0 10px;
 }
 .tape li {
+  column-gap: 12px;
   display: grid;
   grid-template-columns: 1.2fr 1fr 0.8fr;
   padding: 4px 18px;

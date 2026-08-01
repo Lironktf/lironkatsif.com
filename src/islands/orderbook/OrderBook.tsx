@@ -117,7 +117,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
       const roll = Math.random();
       setBids((bs) => {
         const best = asks.find((a) => a.size > 0)?.price ?? 200;
-        if (roll < 0.45) {
+        if (roll < 0.4) {
           const price = Math.max(20, Math.round(best - 5 - Math.random() * 60));
           const bid: Bid = {
             id: uid(),
@@ -128,14 +128,14 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
           };
           return [...bs, bid].slice(-14);
         }
-        if (roll < 0.65 && bs.some((b) => b.demo)) {
+        if (roll < 0.55 && bs.some((b) => b.demo)) {
           const demoBids = bs.filter((b) => b.demo);
           const victim = demoBids[Math.floor(Math.random() * demoBids.length)];
           return bs.filter((b) => b.id !== victim.id);
         }
         return bs;
       });
-      if (roll >= 0.65) {
+      if (roll >= 0.55) {
         setTrades((ts) => {
           const best = asks.find((a) => a.size > 0)?.price ?? 200;
           const t: Trade = {

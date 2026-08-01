@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: 'GM'; src: local('monospace'); }
+  * { margin:0; box-sizing:border-box; }
+  body {
+    width: 1200px; height: 630px;
+    background: #0c0b09;
+    background-image: radial-gradient(circle, rgba(234,231,224,0.055) 1px, transparent 1px);
+    background-size: 24px 24px;
+    font-family: ui-monospace, 'DejaVu Sans Mono', monospace;
+    color: #eae7e0;
+    padding: 64px 72px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative;
+  }
+  .top { display:flex; justify-content:space-between; font-size:20px; color:#9b968a; letter-spacing:.12em; }
+  .top b { color:#ffa028; font-weight:500; }
+  h1 { font-size: 92px; letter-spacing:-0.03em; line-height:1.0; font-weight:600;
+       font-family: 'DejaVu Sans', system-ui, sans-serif; }
+  .book { display:flex; gap:48px; font-size:24px; line-height:1.9; }
+  .book .ask { color:#ff5a5a; }
+  .book .bid { color:#34c08b; }
+  .book .dim { color:#5d594f; }
+  .spread { color:#ffa028; font-size:20px; letter-spacing:.14em; margin-top:8px;}
+  .bottom { display:flex; justify-content:space-between; align-items:flex-end; }
+  .url { font-size:22px; color:#9b968a; letter-spacing:.08em; }
+  .frame { position:absolute; inset:28px; border:1px solid rgba(234,231,224,0.22); pointer-events:none; }
+  .cross { position:absolute; color:#5d594f; font-size:22px; }
+</style>
+</head>
+<body>
+  <div class="frame"></div>
+  <div class="cross" style="top:14px;left:16px">+</div>
+  <div class="cross" style="bottom:14px;right:16px">+</div>
+  <div class="top"><span>LIRON/USDC · <b>SOLANA</b></span><span>MARKET NEVER CLOSES</span></div>
+  <h1>Liron Katsif</h1>
+  <div class="bottom">
+    <div class="book">
+      <div>
+        <div class="ask">500.00 <span class="dim">×</span> 1.0h</div>
+        <div class="ask">340.00 <span class="dim">×</span> 2.0h</div>
+        <div class="ask">220.00 <span class="dim">×</span> 3.0h</div>
+        <div class="ask">180.00 <span class="dim">×</span> 2.0h</div>
+        <div class="spread">— SPREAD: YOUR MOVE —</div>
+        <div class="bid">bid <span class="dim">·</span> name your price</div>
+      </div>
+    </div>
+    <div class="url">buy my time → lironkatsif.com</div>
+  </div>
+</body>
+</html>
