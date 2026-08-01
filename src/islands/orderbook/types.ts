@@ -22,6 +22,7 @@ export type Trade = {
 export type MarketConfig = {
   ticker: string;
   chain: string;
+  halted: boolean;
   solAddress: string;
   usdcMint: string;
   rpc: string;

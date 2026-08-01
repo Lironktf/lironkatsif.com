@@ -82,6 +82,7 @@ type PayState =
   | { s: 'idle' }
   | { s: 'checkout' }
   | { s: 'confirmed'; sig: string }
+  | { s: 'halted' }
   | { s: 'unconfigured' };
 
 export default function OrderBook(props: { asks: Level[]; config: MarketConfig }) {
@@ -187,6 +188,10 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
 
   const startCheckout = () => {
     if (ticket?.kind !== 'buy') return;
+    if (config.halted) {
+      setPay({ s: 'halted' });
+      return;
+    }
     setPay(config.solAddress ? { s: 'checkout' } : { s: 'unconfigured' });
   };
 
@@ -272,9 +277,15 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
           >
             demo feed {demo ? 'on' : 'off'}
           </button>
-          <span className="live">
-            <i /> live
-          </span>
+          {config.halted ? (
+            <span className="live halt">
+              <i /> halted
+            </span>
+          ) : (
+            <span className="live">
+              <i /> live
+            </span>
+          )}
         </div>
       </header>
 
@@ -452,6 +463,22 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                     )}
                   </p>
                   <span className="sig">tx {pay.sig.slice(0, 10)}…{pay.sig.slice(-6)}</span>
+                </div>
+              )}
+              {pay.s === 'halted' && (
+                <div className="offline halted mono" role="status">
+                  <b>trading halted</b>
+                  <p>
+                    the market isn't open for business yet — no orders are
+                    being accepted.{' '}
+                    <a
+                      href={`mailto:${config.email}?subject=${encodeURIComponent(
+                        `[HALTED] interested in ${hrs(ticket.qty)}h @ ${px(ticket.level.price)} USDC/h`,
+                      )}`}
+                    >
+                      email me and I'll ping you at the opening bell ↗
+                    </a>
+                  </p>
                 </div>
               )}
               {pay.s === 'unconfigured' && (

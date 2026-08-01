@@ -94,6 +94,12 @@
   background: var(--bid);
   animation: ob-pulse 2.4s var(--ease-out) infinite;
 }
+.live.halt { color: var(--accent); }
+.live.halt i {
+  background: var(--accent);
+  animation: none;
+}
+.offline.halted { border-color: var(--accent); }
 @keyframes ob-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }
