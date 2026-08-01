@@ -1,10 +1,10 @@
 {
-  "_comment": "The sell side of the book. Each level is real, bookable time: `size` hours available at `price` USDC per hour. Edit freely — the book re-renders from this file.",
+  "_comment": "The sell side of the book. Unit = one 15-minute block. Each level: `size` blocks available at `price` USDC per block. Edit freely — the book re-renders from this file.",
   "levels": [
-    { "price": 180, "size": 2, "note": "office hour — questions, reviews, advice" },
-    { "price": 220, "size": 3, "note": "pairing — we build together" },
-    { "price": 260, "size": 2, "note": "deep work — I take a problem away" },
-    { "price": 340, "size": 2, "note": "weekend / rush priority" },
-    { "price": 500, "size": 1, "note": "the last hour — when everything else is gone" }
+    { "price": 0.5, "size": 2, "note": "the people's block — ask me anything" },
+    { "price": 1, "size": 2, "note": "questions, quick reviews, advice" },
+    { "price": 2.5, "size": 2, "note": "we pair on your thing" },
+    { "price": 5, "size": 1, "note": "priority — same week, guaranteed" },
+    { "price": 25, "size": 1, "note": "the last block — when everything else is gone" }
   ]
 }

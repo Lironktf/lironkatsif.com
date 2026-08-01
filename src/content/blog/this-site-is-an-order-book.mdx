@@ -10,8 +10,9 @@ The centerpiece of this site is **LIRON/USDC** — a live order book where the
 asset is my time. It works like any book you'd see on an exchange, just
 smaller and more honest:
 
-- **The asks (red)** are real. Each level is a block of hours I've decided to
-  sell at that price, straight from a JSON file I edit. Click one and pay in
+- **The asks (red)** are real. Each level is a stack of 15-minute blocks I've
+  decided to sell at that price — starting at fifty cents, because let's be
+  honest about my market cap — straight from a JSON file I edit. Click one and pay in
   USDC — connect a wallet (Phantom, Solflare, whatever speaks Wallet
   Standard) and trade in one click, or scan a Solana Pay QR. Either way the
   site watches the chain for your transfer — when it confirms, the trade
@@ -50,8 +51,8 @@ transaction carrying that reference lands. `validateTransfer` then checks
 the recipient, mint and amount before the site calls it a fill.
 
 A note on what this isn't: it's not a token, there's nothing to flip, and
-buying an hour entitles you to exactly one thing — an hour. The SEC has
-enough on its plate.
+buying a block entitles you to exactly one thing — fifteen minutes. The SEC
+has enough on its plate.
 
 ## The look
 

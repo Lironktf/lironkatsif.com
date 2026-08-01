@@ -8,7 +8,9 @@ const BIDS_KEY = 'lk.bids';
 const TRADES_KEY = 'lk.trades';
 
 const px = (n: number) => n.toFixed(2);
-const hrs = (n: number) => n.toFixed(1);
+// sizes are 15-minute blocks
+const blk = (n: number) => String(Math.round(n));
+const mins = (n: number) => `${Math.round(n * 15)}m`;
 const hhmmss = (ts: number) => new Date(ts).toISOString().slice(11, 19);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -69,10 +71,10 @@ function Row(props: {
       <i className="depth" style={{ width: `${depth}%` }} />
       <span className="p">{px(props.price)}</span>
       <span className="s">
-        {hrs(props.size)}
+        {blk(props.size)}
         {props.demo && <em className="demo-tag">demo</em>}
       </span>
-      <span className="c">{hrs(props.cum)}</span>
+      <span className="c">{blk(props.cum)}</span>
     </button>
   );
 }
@@ -95,7 +97,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
   const [demo, setDemo] = useState(false);
   const [ticket, setTicket] = useState<TicketMode>(null);
   const [pay, setPay] = useState<PayState>({ s: 'idle' });
-  const [bidForm, setBidForm] = useState({ price: '', size: '1.0', note: '' });
+  const [bidForm, setBidForm] = useState({ price: '', size: '1', note: '' });
 
   // hydrate persisted state after mount (island is client-rendered but be safe)
   useEffect(() => {
@@ -115,9 +117,9 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
     const timer = setInterval(() => {
       const roll = Math.random();
       setBids((bs) => {
-        const best = asks.find((a) => a.size > 0)?.price ?? 200;
+        const best = asks.find((a) => a.size > 0)?.price ?? 1;
         if (roll < 0.4) {
-          const price = Math.max(20, Math.round(best - 5 - Math.random() * 60));
+          const price = Math.max(0.05, +(best * (0.4 + Math.random() * 0.5)).toFixed(2));
           const bid: Bid = {
             id: uid(),
             price,
@@ -136,11 +138,11 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
       });
       if (roll >= 0.55) {
         setTrades((ts) => {
-          const best = asks.find((a) => a.size > 0)?.price ?? 200;
+          const best = asks.find((a) => a.size > 0)?.price ?? 1;
           const t: Trade = {
             id: uid(),
             side: Math.random() > 0.4 ? 'buy' : 'sell',
-            price: Math.round(best + (Math.random() - 0.6) * 30),
+            price: Math.max(0.05, +(best * (0.8 + Math.random() * 0.5)).toFixed(2)),
             size: Math.ceil(Math.random() * 2),
             ts: Date.now(),
             demo: true,
@@ -226,12 +228,12 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
     const bid: Bid = { id: uid(), price, size, note: bidForm.note, ts: Date.now() };
     setBids((bs) => [...bs, bid]);
     const body = encodeURIComponent(
-      `Bid on ${config.ticker}\n\nprice: ${price} USDC/h\nsize: ${size}h\nnote: ${bidForm.note || '—'}\n\n(reply to this email to negotiate / get filled)`,
+      `Bid on ${config.ticker}\n\nprice: ${price} USDC per 15m\nsize: ${size} × 15m\nnote: ${bidForm.note || '—'}\n\n(reply to this email to negotiate / get filled)`,
     );
     window.location.href = `mailto:${config.email}?subject=${encodeURIComponent(
-      `[BID] ${size}h @ ${price} USDC/h`,
+      `[BID] ${size}×15m @ ${price} USDC`,
     )}&body=${body}`;
-    setBidForm({ price: '', size: '1.0', note: '' });
+    setBidForm({ price: '', size: '1', note: '' });
     setTicket(null);
   };
 
@@ -261,11 +263,11 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
           </div>
           <div>
             <dt>24h vol</dt>
-            <dd>{hrs(vol24)}h</dd>
+            <dd>{mins(vol24)}</dd>
           </div>
           <div>
             <dt>depth</dt>
-            <dd>{hrs(liveAsks.reduce((a, l) => a + l.size, 0))}h</dd>
+            <dd>{mins(liveAsks.reduce((a, l) => a + l.size, 0))}</dd>
           </div>
         </dl>
         <div className="head-right">
@@ -300,8 +302,8 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
         {/* ── the book ── */}
         <section className="book" aria-label="Order book">
           <div className="cols mono">
-            <span>price · usdc/h</span>
-            <span>size · h</span>
+            <span>price · usdc/15m</span>
+            <span>size · ×15m</span>
             <span>total</span>
           </div>
 
@@ -332,7 +334,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                 <span>mid {px((bestAsk! + bestBid!) / 2)}</span>
               </>
             ) : (
-              <span>cheapest hour {bestAsk != null ? px(bestAsk) : '—'} usdc</span>
+              <span>cheapest 15 min {bestAsk != null ? px(bestAsk) : '—'} usdc</span>
             )}
           </div>
 
@@ -397,7 +399,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
               <p className="note">{ticket.level.note}</p>
               <div className="line mono">
                 <span>price</span>
-                <b>{px(ticket.level.price)} usdc/h</b>
+                <b>{px(ticket.level.price)} usdc / 15m</b>
               </div>
               <div className="line mono">
                 <span>size</span>
@@ -411,7 +413,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                   >
                     −
                   </button>
-                  <b>{hrs(ticket.qty)}h</b>
+                  <b>{blk(ticket.qty)} × 15m</b>
                   <button
                     type="button"
                     onClick={() =>
@@ -433,7 +435,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
 
               {pay.s === 'idle' && (
                 <button type="button" className="exec mono" onClick={startCheckout}>
-                  buy {hrs(ticket.qty)}h @ {px(ticket.level.price)}
+                  buy {blk(ticket.qty)}×15m @ {px(ticket.level.price)}
                 </button>
               )}
               {pay.s === 'checkout' && (
@@ -442,8 +444,8 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                 >
                   <WalletPay
                     amount={ticket.level.price * ticket.qty}
-                    label={`${config.ticker} — ${hrs(ticket.qty)}h`}
-                    message={`${hrs(ticket.qty)}h of Liron's time @ ${px(ticket.level.price)} USDC/h`}
+                    label={`${config.ticker} — ${blk(ticket.qty)}×15m`}
+                    message={`${mins(ticket.qty)} of Liron's time @ ${px(ticket.level.price)} USDC per 15m`}
                     config={config}
                     onConfirmed={handleFill}
                   />
@@ -473,7 +475,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                     being accepted.{' '}
                     <a
                       href={`mailto:${config.email}?subject=${encodeURIComponent(
-                        `[HALTED] interested in ${hrs(ticket.qty)}h @ ${px(ticket.level.price)} USDC/h`,
+                        `[HALTED] interested in ${blk(ticket.qty)}×15m @ ${px(ticket.level.price)} USDC per 15m`,
                       )}`}
                     >
                       email me and I'll ping you at the opening bell ↗
@@ -488,7 +490,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                     the wallet isn't wired up yet —{' '}
                     <a
                       href={`mailto:${config.email}?subject=${encodeURIComponent(
-                        `[BUY] ${hrs(ticket.qty)}h @ ${px(ticket.level.price)} USDC/h`,
+                        `[BUY] ${blk(ticket.qty)}×15m @ ${px(ticket.level.price)} USDC per 15m`,
                       )}`}
                     >
                       email me and consider it filled ↗
@@ -509,16 +511,16 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                 emails me, and I fill the ones I like.
               </p>
               <label className="line mono">
-                <span>price · usdc/h</span>
+                <span>price · usdc/15m</span>
                 <input
                   inputMode="decimal"
-                  placeholder={bestAsk ? String(Math.round(bestAsk * 0.7)) : '120'}
+                  placeholder={bestAsk ? (bestAsk * 0.6).toFixed(2) : '0.25'}
                   value={bidForm.price}
                   onChange={(e) => setBidForm({ ...bidForm, price: e.target.value })}
                 />
               </label>
               <label className="line mono">
-                <span>size · hours</span>
+                <span>size · ×15m</span>
                 <input
                   inputMode="decimal"
                   value={bidForm.size}
@@ -559,7 +561,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                   <span>{hhmmss(t.ts)}</span>
                   <span>{px(t.price)}</span>
                   <span>
-                    {hrs(t.size)}h{t.demo && <em className="demo-tag">demo</em>}
+                    {mins(t.size)}{t.demo && <em className="demo-tag">demo</em>}
                   </span>
                 </li>
               ))}
