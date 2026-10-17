@@ -3,7 +3,7 @@
   "positions": [
     { "role": "Quantitative Developer Intern", "org": "Blockhouse Capital", "start": "2026.09", "end": "now", "line": "Curated-vault rebalancing and funding-carry signals on 7 CEX/DEX venues. Rebuilt H100/B200 rental indices for compute futures." },
     { "role": "DeFi Engineer", "org": "Qapture Investments", "start": "2026.05", "end": "now", "line": "Built ALMA, automated liquidity management on Uniswap and Aerodrome at 21% APY. Audited Solidity on $2M+." },
-    { "role": "Blockchain Researcher", "org": "Waterloo Blockchain Club", "start": "2026.10", "end": "now", "line": "Tokenized-stock price discovery across 7 perp venues, and zero-knowledge payments." },
+    { "role": "Blockchain Researcher", "org": "Waterloo Blockchain", "start": "2026.10", "end": "now", "line": "Tokenized-stock price discovery across 7 perp venues, and zero-knowledge payments." },
     { "role": "Software Engineer (contract)", "org": "Polymarket", "start": "2026.02", "end": "2026.02", "line": "Ranking model over 6,000+ markets and a UMA resolution prototype for user-created markets." },
     { "role": "Machine Learning Engineer", "org": "WAT.ai", "start": "2026.01", "end": "2026.04", "line": "Sentiment engine and the Go/ClickHouse backend for a stock-forecasting tool." },
     { "role": "Machine Learning Engineer", "org": "Wat Street", "start": "2025.12", "end": "2026.04", "line": "Volatility contagion model across 7,000+ assets, 30% lower forecast error than GARCH." },
