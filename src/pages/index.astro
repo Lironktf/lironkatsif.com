@@ -41,7 +41,9 @@ const tiers = [
   { key: 'main', label: 'main board' },
   { key: 'otc', label: 'otc' },
   { key: 'delisted', label: 'delisted' },
-].map((g) => ({ ...g, items: listings.filter((l) => l.tier === g.key) }));
+]
+  .map((g) => ({ ...g, items: listings.filter((l) => l.tier === g.key) }))
+  .filter((g) => g.items.length > 0);
 
 const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
