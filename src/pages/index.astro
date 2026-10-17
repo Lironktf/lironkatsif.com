@@ -4,6 +4,7 @@ import OrderBook from '../islands/orderbook/OrderBook';
 import { SITE } from '../config';
 import asksData from '../data/asks.json';
 import expData from '../data/experience.json';
+import listData from '../data/listings.json';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('blog'))
@@ -29,6 +30,13 @@ const positions = expData.positions as {
   line: string;
 }[];
 
+const listings = listData.listings as {
+  symbol: string;
+  name: string;
+  line: string;
+  links: { label: string; href: string }[];
+}[];
+
 const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
@@ -37,9 +45,9 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
   <section class="page intro">
     <h1>Liron Katsif</h1>
     <div class="intro-side mono">
-      <p>engineer.</p>
+      <p>quant dev at blockhouse capital.</p>
+      <p>zk payments, order books, chess engines.</p>
       <p>my time trades below.</p>
-      <p>the market never closes.</p>
     </div>
   </section>
 
@@ -69,7 +77,7 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
           {positions.map((p) => (
             <li>
               <span class="mono dates">
-                {p.start}–{p.end}
+                {p.start === p.end ? p.start : `${p.start}–${p.end}`}
               </span>
               <span class="role">
                 {p.role} · {p.org}
@@ -82,9 +90,36 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
     }
   </section>
 
+  <!-- ── listings ── -->
+  <section class="page" id="listings">
+    <h2 class="sec"><b>03</b> listings</h2>
+    <ol class="listings">
+      {
+        listings.map((l) => (
+          <li>
+            <span class="mono sym">{l.symbol}</span>
+            <span class="name">{l.name}</span>
+            <span class="line">{l.line}</span>
+            <span class="mono links">
+              {l.links.length === 0 ? (
+                <span class="private">private</span>
+              ) : (
+                l.links.map((k) => (
+                  <a href={k.href} target="_blank" rel="noopener">
+                    {k.label} ↗
+                  </a>
+                ))
+              )}
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
   <!-- ── writing ── -->
   <section class="page" id="writing">
-    <h2 class="sec"><b>03</b> writing</h2>
+    <h2 class="sec"><b>04</b> writing</h2>
     <ol class="posts">
       {
         posts.map((post) => (
@@ -161,6 +196,25 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
   .positions .role { font-weight: 500; }
   .positions .line { color: var(--ink-dim); }
 
+
+  .listings { list-style: none; }
+  .listings li {
+    display: grid;
+    grid-template-columns: 80px 1fr 1.6fr 110px;
+    gap: 20px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 14px;
+  }
+  .listings .sym { color: var(--accent); font-size: 12px; letter-spacing: 0.06em; }
+  .listings .name { font-weight: 500; }
+  .listings .line { color: var(--ink-dim); }
+  .listings .links { display: flex; gap: 12px; justify-content: flex-end; font-size: 12px; }
+  .listings .links a { color: var(--ink-dim); text-decoration: none; }
+  .listings .links a:hover { color: var(--accent); }
+  .listings .private { color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+
   .posts { list-style: none; }
   .posts li {
     display: flex;
@@ -191,5 +245,7 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
     .intro { flex-direction: column; align-items: flex-start; }
     .intro-side { text-align: left; }
     .positions li { grid-template-columns: 1fr; gap: 4px; }
+    .listings li { grid-template-columns: 1fr; gap: 4px; }
+    .listings .links { justify-content: flex-start; }
   }
 </style>

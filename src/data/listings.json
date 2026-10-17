@@ -1,0 +1,63 @@
+{
+  "_comment": "Listed instruments = projects. { symbol, name, line, links: [{label, href}] }. Private repos get no link.",
+  "listings": [
+    {
+      "symbol": "GRAYR",
+      "name": "Grayr: confidential agent payments",
+      "line": "ZK shielded USDC pool on Base. AI agents pay x402 APIs without revealing who paid, with refunds and escrow.",
+      "links": [
+        {
+          "label": "demo",
+          "href": "https://demo.grayr.xyz"
+        },
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/comms"
+        }
+      ]
+    },
+    {
+      "symbol": "ANNA",
+      "name": "Anna: NNUE chess engine",
+      "line": "Rust UCI engine with threat-aware NNUE nets, a 3,578 blitz rating, gated on SPRT.",
+      "links": [
+        {
+          "label": "play",
+          "href": "https://chess.lironkatsif.com"
+        },
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/anna-chess"
+        }
+      ]
+    },
+    {
+      "symbol": "LTAX",
+      "name": "latencytax: C++20 matching engine",
+      "line": "ITCH/OUCH order book at 17M msg/s, 0 mismatches on 25.6M level checks against Hyperliquid.",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/latencytax"
+        }
+      ]
+    },
+    {
+      "symbol": "ADATA",
+      "name": "AlphaData: crypto research data",
+      "line": "142,775 SHA-256-verified datasets from 24 live collectors across 30 venues.",
+      "links": []
+    },
+    {
+      "symbol": "FLOWTO",
+      "name": "FlowTO: 1st at NVIDIA Spark Hacks",
+      "line": "GNN traffic model for Toronto, 0.93 R² across 73,000+ road edges.",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/flowTO"
+        }
+      ]
+    }
+  ]
+}
