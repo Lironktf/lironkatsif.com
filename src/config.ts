@@ -4,7 +4,7 @@ export const SITE = {
   title: 'Liron Katsif — LIRON/USDC',
   description:
     'Personal site of Liron Katsif. Features a live order book where you can buy my time with USDC on Solana.',
-  email: 'liron@qapture.io',
+  email: 'lkatsif@uwaterloo.ca',
   github: 'https://github.com/Lironktf',
 
   // ── Market config ─────────────────────────────────────────────
