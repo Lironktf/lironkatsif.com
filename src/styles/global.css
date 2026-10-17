@@ -176,3 +176,12 @@ code, pre, kbd {
 }
 .marks::before { top: -5px; left: -5px; }
 .marks::after { bottom: -5px; right: -5px; }
+
+/* Lock the page in place: no rubber-band bounce on any edge (top, bottom,
+   left, right) and no sideways scrolling. `clip` (not `hidden`) so sticky
+   elements keep working. */
+html,
+body {
+  overscroll-behavior: none;
+  overflow-x: clip;
+}

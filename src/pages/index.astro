@@ -34,8 +34,14 @@ const listings = listData.listings as {
   symbol: string;
   name: string;
   line: string;
+  tier: 'main' | 'otc' | 'delisted';
   links: { label: string; href: string }[];
 }[];
+const tiers = [
+  { key: 'main', label: 'main board' },
+  { key: 'otc', label: 'otc' },
+  { key: 'delisted', label: 'delisted' },
+].map((g) => ({ ...g, items: listings.filter((l) => l.tier === g.key) }));
 
 const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
@@ -93,28 +99,33 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
   <!-- ── listings ── -->
   <section class="page" id="listings">
     <h2 class="sec"><b>03</b> listings</h2>
-    <ol class="listings">
-      {
-        listings.map((l) => (
-          <li>
-            <span class="mono sym">{l.symbol}</span>
-            <span class="name">{l.name}</span>
-            <span class="line">{l.line}</span>
-            <span class="mono links">
-              {l.links.length === 0 ? (
-                <span class="private">private</span>
-              ) : (
-                l.links.map((k) => (
-                  <a href={k.href} target="_blank" rel="noopener">
-                    {k.label} ↗
-                  </a>
-                ))
-              )}
-            </span>
-          </li>
-        ))
-      }
-    </ol>
+    {
+      tiers.map((g) => (
+        <div class="tier">
+          <p class="mono tier-label">{g.label} · {g.items.length}</p>
+          <ol class:list={['listings', g.key]}>
+            {g.items.map((l) => (
+              <li>
+                <span class="mono sym">{l.symbol}</span>
+                <span class="name">{l.name}</span>
+                <span class="line">{l.line}</span>
+                <span class="mono links">
+                  {l.links.length === 0 ? (
+                    <span class="private">private</span>
+                  ) : (
+                    l.links.map((k) => (
+                      <a href={k.href} target="_blank" rel="noopener">
+                        {k.label} ↗
+                      </a>
+                    ))
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
   </section>
 
   <!-- ── writing ── -->
@@ -197,6 +208,20 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
   .positions .line { color: var(--ink-dim); }
 
 
+  .tier + .tier { margin-top: 36px; }
+  .tier-label {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hairline-strong);
+  }
+  .listings.otc li,
+  .listings.delisted li { padding: 9px 0; font-size: 13px; }
+  .listings.delisted .sym,
+  .listings.delisted .name { color: var(--ink-faint); text-decoration: line-through; text-decoration-thickness: 1px; }
   .listings { list-style: none; }
   .listings li {
     display: grid;

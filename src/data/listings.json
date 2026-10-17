@@ -1,10 +1,11 @@
 {
-  "_comment": "Listed instruments = projects. { symbol, name, line, links: [{label, href}] }. Private repos get no link.",
+  "_comment": "Listed instruments = projects. tier: main | otc | delisted. Private repos get no link.",
   "listings": [
     {
       "symbol": "GRAYR",
       "name": "Grayr: confidential agent payments",
       "line": "ZK shielded USDC pool on Base. AI agents pay x402 APIs without revealing who paid, with refunds and escrow.",
+      "tier": "main",
       "links": [
         {
           "label": "demo",
@@ -20,6 +21,7 @@
       "symbol": "ANNA",
       "name": "Anna: NNUE chess engine",
       "line": "Rust UCI engine with threat-aware NNUE nets, a 3,578 blitz rating, gated on SPRT.",
+      "tier": "main",
       "links": [
         {
           "label": "play",
@@ -35,6 +37,7 @@
       "symbol": "LTAX",
       "name": "latencytax: C++20 matching engine",
       "line": "ITCH/OUCH order book at 17M msg/s, 0 mismatches on 25.6M level checks against Hyperliquid.",
+      "tier": "main",
       "links": [
         {
           "label": "code",
@@ -46,16 +49,225 @@
       "symbol": "ADATA",
       "name": "AlphaData: crypto research data",
       "line": "142,775 SHA-256-verified datasets from 24 live collectors across 30 venues.",
+      "tier": "main",
       "links": []
+    },
+    {
+      "symbol": "RVLN",
+      "name": "Riverline: can an LLM play poker?",
+      "line": "Measures an LLM poker policy's exact exploitability against solved equilibria in Kuhn and Leduc poker.",
+      "tier": "main",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/riverline"
+        }
+      ]
+    },
+    {
+      "symbol": "RREV",
+      "name": "rreview: on-device chess reviews",
+      "line": "Free, unlimited game reviews with Stockfish 19 running on your phone. Share straight from Chess.com.",
+      "tier": "main",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/rreview"
+        }
+      ]
     },
     {
       "symbol": "FLOWTO",
       "name": "FlowTO: 1st at NVIDIA Spark Hacks",
       "line": "GNN traffic model for Toronto, 0.93 R² across 73,000+ road edges.",
+      "tier": "main",
       "links": [
         {
           "label": "code",
           "href": "https://github.com/Lironktf/flowTO"
+        }
+      ]
+    },
+    {
+      "symbol": "TRDF",
+      "name": "TradeOff: 1st at NexHacks",
+      "line": "Hedges stock portfolios with prediction markets, matching exposures to 6,000+ Polymarket markets.",
+      "tier": "main",
+      "links": [
+        {
+          "label": "demo",
+          "href": "https://tradeoffai.vercel.app"
+        },
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/tradeoff"
+        }
+      ]
+    },
+    {
+      "symbol": "CARS",
+      "name": "carsearch: used-car market data",
+      "line": "Canadian used-car listings turned into a price-history database, exposed to agents over MCP.",
+      "tier": "main",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/carsearch"
+        }
+      ]
+    },
+    {
+      "symbol": "AVRO",
+      "name": "avro: veAERO vote optimizer",
+      "line": "Prices Aerodrome fees and incentives on Base and recommends how to allocate veAERO votes.",
+      "tier": "main",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/avro"
+        }
+      ]
+    },
+    {
+      "symbol": "SLIP",
+      "name": "Slipstream Lab: LP backtester",
+      "line": "Concentrated-liquidity backtester with fee attribution within 0.002% of on-chain collects.",
+      "tier": "main",
+      "links": []
+    },
+    {
+      "symbol": "GHOST",
+      "name": "ghosttype",
+      "line": "Locks your terminal when the typing rhythm isn't yours (one-class SVM on keystroke timing).",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/ghoster"
+        }
+      ]
+    },
+    {
+      "symbol": "QLLM",
+      "name": "QuickLLM",
+      "line": "Chrome side-panel LLM assistant that pulls context from the page you're on.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/QuickLLM"
+        }
+      ]
+    },
+    {
+      "symbol": "EZRA",
+      "name": "Ezra: GitHub expert finder",
+      "line": "Finds the right people for a technical question from their GitHub PR history.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Ezra"
+        }
+      ]
+    },
+    {
+      "symbol": "PROX",
+      "name": "ProximityDrive",
+      "line": "React Native proximity voice chat over WebRTC, radius from 100 m to 5 km.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Prox"
+        }
+      ]
+    },
+    {
+      "symbol": "NOTH",
+      "name": "Nothing desktop concept",
+      "line": "Unofficial Nothing-OS-style ecosystem: Android companion app paired with a Fedora desktop.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/everything"
+        }
+      ]
+    },
+    {
+      "symbol": "CHSH",
+      "name": "Chess Hacks engine",
+      "line": "Neural-network chess engine trained on Lichess elite games.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Chess-Hacks"
+        }
+      ]
+    },
+    {
+      "symbol": "PROMR",
+      "name": "Promer",
+      "line": "Fixes macOS command-tab.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Promer-Mac-Cmd-Tab"
+        }
+      ]
+    },
+    {
+      "symbol": "BKMK",
+      "name": "Bookmark extension",
+      "line": "Chrome extension that saves your place on a page.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "demo",
+          "href": "https://chrome-extension-pink.vercel.app"
+        },
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Chrome-Extension"
+        }
+      ]
+    },
+    {
+      "symbol": "SPOT",
+      "name": "Spotify queue extension",
+      "line": "Web extension that streamlines Spotify's queue.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/Spotify-Web-Extension"
+        }
+      ]
+    },
+    {
+      "symbol": "UWFL",
+      "name": "UWFlow course ranker",
+      "line": "Orders a list of Waterloo courses by difficulty using UWFlow ratings.",
+      "tier": "otc",
+      "links": [
+        {
+          "label": "code",
+          "href": "https://github.com/Lironktf/UWFlow-Course-Ranking"
+        }
+      ]
+    },
+    {
+      "symbol": "NAI",
+      "name": "The News AI",
+      "line": "Daily AI and tech news carousels and videos across Instagram, LinkedIn and TikTok.",
+      "tier": "delisted",
+      "links": [
+        {
+          "label": "site",
+          "href": "https://nai-landing.vercel.app"
         }
       ]
     }
