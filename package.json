@@ -9,19 +9,24 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test:market": "tsx --test tests/market.test.ts",
+    "test:e2e": "tsx scripts/e2e-local.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",
     "@astrojs/react": "^6.0.2",
+    "@astrojs/vercel": "^11.0.15",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
+    "@solana/kit": "^6.10.0",
     "@solana/pay": "^1.0.26",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/web3.js": "^1.98.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@upstash/redis": "^1.39.0",
     "astro": "^7.1.6",
     "bignumber.js": "^11.1.5",
     "qrcode": "^1.5.4",
@@ -29,6 +34,9 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "playwright": "^1.62.1"
+    "@solana/spl-token": "^0.4.15",
+    "@types/qrcode": "^1.5.6",
+    "playwright": "^1.62.1",
+    "tsx": "^4.23.15"
   }
 }

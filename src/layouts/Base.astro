@@ -7,9 +7,10 @@ import { SITE } from '../config';
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
 }
 
-const { title = SITE.title, description = SITE.description } = Astro.props;
+const { title = SITE.title, description = SITE.description, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, SITE.url);
 ---
 
@@ -29,6 +30,7 @@ const canonical = new URL(Astro.url.pathname, SITE.url);
     <meta property="og:image" content={new URL('/og.png', SITE.url)} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
   </head>
   <body>
     <header class="page top">

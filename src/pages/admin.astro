@@ -1,0 +1,198 @@
+---
+// Owner console for the market. Static page; every action goes through the
+// /api/admin/* routes, which require ADMIN_TOKEN as a Bearer token. The token
+// is kept in sessionStorage only (cleared when the tab closes).
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="desk · LIRON/USDC" noindex>
+  <section class="page desk">
+    <h2 class="sec"><b>00</b> desk</h2>
+
+    <form id="login" class="mono login">
+      <input id="token" type="password" placeholder="admin token" autocomplete="current-password" />
+      <button type="submit">unlock</button>
+    </form>
+
+    <div id="app" hidden>
+      <div class="mono status">
+        <span id="st"></span>
+        <span class="actions">
+          <button id="halt">halt now</button>
+          <button id="unhalt">reopen</button>
+          <button id="reload">refresh</button>
+          <button id="lock">lock</button>
+        </span>
+      </div>
+      <p class="mono hint" id="hint"></p>
+
+      <h3 class="mono">inventory</h3>
+      <table class="mono" id="inv"></table>
+
+      <h3 class="mono">bids</h3>
+      <table class="mono" id="bids"></table>
+
+      <h3 class="mono">pending orders</h3>
+      <table class="mono" id="orders"></table>
+
+      <h3 class="mono">trades</h3>
+      <table class="mono" id="trades"></table>
+    </div>
+    <p class="mono err" id="err"></p>
+  </section>
+</Base>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  const KEY = 'lk.admin';
+  let token = sessionStorage.getItem(KEY) ?? '';
+
+  const esc = (s: unknown) =>
+    String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  const when = (ts: number) => new Date(ts).toISOString().replace('T', ' ').slice(0, 19);
+
+  async function call(path: string, body?: unknown) {
+    const res = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      sessionStorage.removeItem(KEY);
+      token = '';
+      throw new Error('wrong token');
+    }
+    if (!res.ok) throw new Error(json.message ?? `error ${res.status}`);
+    return json;
+  }
+
+  function render(s: any) {
+    $('login').hidden = true;
+    $('app').hidden = false;
+    $('err').textContent = '';
+    const tx = (sig: string) =>
+      `https://solscan.io/tx/${sig}${s.cluster === 'devnet' ? '?cluster=devnet' : ''}`;
+    $('st').innerHTML =
+      `${s.halted ? '<b class="halt">HALTED</b>' : '<b class="live">LIVE</b>'} · ${esc(s.cluster)} · ` +
+      `recipient ${esc(s.recipient ? s.recipient.slice(0, 4) + '…' + s.recipient.slice(-4) : 'not set')}`;
+    $('hint').textContent = s.envHalted
+      ? 'MARKET_HALTED is not "false" in the environment, so the market stays halted regardless of the buttons.'
+      : s.haltOverride
+        ? 'halted from this desk. "reopen" resumes trading.'
+        : '';
+
+    $('inv').innerHTML =
+      '<tr><th>price</th><th>left</th><th>set</th></tr>' +
+      Object.entries(s.inventory)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(
+          ([p, n]) =>
+            `<tr><td>${esc(p)}</td><td>${esc(n)}</td><td><input size="3" data-p="${esc(p)}" value="${esc(n)}"/> <button data-set="${esc(p)}">set</button></td></tr>`,
+        )
+        .join('');
+
+    $('bids').innerHTML =
+      '<tr><th>when</th><th>price</th><th>size</th><th>contact</th><th>note</th><th></th></tr>' +
+      (s.bids.length
+        ? s.bids
+            .map(
+              (b: any) =>
+                `<tr><td>${when(b.ts)}</td><td>${b.price.toFixed(2)}</td><td>${b.size}</td><td>${esc(b.contact)}</td><td>${esc(b.note)}</td><td><button data-del="${esc(b.id)}">remove</button></td></tr>`,
+            )
+            .join('')
+        : '<tr><td colspan="6">no bids</td></tr>');
+
+    $('orders').innerHTML =
+      '<tr><th>created</th><th>ref</th><th>price × qty</th><th>amount</th><th>expires</th></tr>' +
+      (s.pendingOrders.length
+        ? s.pendingOrders
+            .map(
+              (o: any) =>
+                `<tr><td>${when(o.createdAt)}</td><td>${esc(o.ref.slice(0, 8))}</td><td>${o.price.toFixed(2)} × ${o.qty}</td><td>${o.amount.toFixed(2)}</td><td>${when(o.expiresAt)}</td></tr>`,
+            )
+            .join('')
+        : '<tr><td colspan="5">none</td></tr>');
+
+    $('trades').innerHTML =
+      '<tr><th>when</th><th>price</th><th>blocks</th><th>tx</th></tr>' +
+      (s.trades.length
+        ? s.trades
+            .map(
+              (t: any) =>
+                `<tr><td>${when(t.ts)}</td><td>${t.price.toFixed(2)}</td><td>${t.size}</td><td><a href="${tx(t.sig)}" target="_blank" rel="noopener">${esc(t.sig.slice(0, 10))}… ↗</a></td></tr>`,
+            )
+            .join('')
+        : '<tr><td colspan="4">no trades yet</td></tr>');
+  }
+
+  async function load() {
+    try {
+      render(await call('/api/admin/state'));
+    } catch (e) {
+      $('app').hidden = true;
+      $('login').hidden = false;
+      $('err').textContent = (e as Error).message;
+    }
+  }
+  async function act(body: unknown) {
+    try {
+      render((await call('/api/admin/action', body)).state);
+    } catch (e) {
+      $('err').textContent = (e as Error).message;
+    }
+  }
+
+  $('login').addEventListener('submit', (e) => {
+    e.preventDefault();
+    token = ($('token') as HTMLInputElement).value.trim();
+    sessionStorage.setItem(KEY, token);
+    load();
+  });
+  $('halt').addEventListener('click', () => act({ action: 'halt' }));
+  $('unhalt').addEventListener('click', () => act({ action: 'unhalt' }));
+  $('reload').addEventListener('click', load);
+  $('lock').addEventListener('click', () => {
+    sessionStorage.removeItem(KEY);
+    location.reload();
+  });
+  document.addEventListener('click', (e) => {
+    const el = e.target as HTMLElement;
+    if (el.dataset.del && confirm('remove this bid?')) act({ action: 'delete-bid', id: el.dataset.del });
+    if (el.dataset.set) {
+      const input = document.querySelector<HTMLInputElement>(`input[data-p="${el.dataset.set}"]`)!;
+      act({ action: 'set-inventory', price: Number(el.dataset.set), size: Number(input.value) });
+    }
+  });
+  if (token) load();
+</script>
+
+<style>
+  .desk { padding-block: 48px 96px; }
+  .login { display: flex; gap: 10px; margin-top: 24px; }
+  .login[hidden], #app[hidden] { display: none; }
+  .login input { flex: 0 1 320px; }
+  input, button {
+    font: inherit;
+    font-size: 12px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+  }
+  button { cursor: pointer; color: var(--ink-dim); }
+  button:hover { color: var(--accent); border-color: var(--accent); }
+  .status { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 24px; font-size: 13px; flex-wrap: wrap; }
+  .status .actions { display: flex; gap: 8px; }
+  :global(.halt) { color: var(--accent); }
+  :global(.live) { color: #3fb950; }
+  .hint { font-size: 12px; color: var(--ink-faint); margin-top: 8px; min-height: 1em; }
+  h3 { font-size: 11px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin: 36px 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  :global(.desk th), :global(.desk td) { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  :global(.desk th) { color: var(--ink-faint); font-weight: 400; }
+  :global(.desk td input) { width: 64px; padding: 4px 6px; }
+  :global(.desk a) { color: var(--ink-dim); }
+  .err { color: #f85149; font-size: 12px; margin-top: 12px; }
+</style>

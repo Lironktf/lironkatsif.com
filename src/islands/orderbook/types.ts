@@ -11,7 +11,7 @@ export type Bid = {
 
 export type Trade = {
   id: string;
-  side: 'buy' | 'sell';
+  side?: 'buy' | 'sell';
   price: number;
   size: number;
   ts: number;
@@ -19,13 +19,32 @@ export type Trade = {
   sig?: string;
 };
 
+/** Static display config. Everything that matters for money comes from the server. */
 export type MarketConfig = {
   ticker: string;
   chain: string;
-  halted: boolean;
-  solAddress: string;
-  usdcMint: string;
-  rpc: string;
-  bookingUrl: string;
   email: string;
 };
+
+export type BookSnapshot = {
+  halted: boolean;
+  cluster: 'devnet' | 'mainnet-beta';
+  levels: Level[];
+  bids: Bid[];
+  trades: Trade[];
+  publicRpc: string;
+};
+
+export type ServerOrder = {
+  ref: string;
+  price: number;
+  qty: number;
+  amount: number;
+  expiresAt: number;
+  recipient: string;
+  mint: string;
+  cluster: 'devnet' | 'mainnet-beta';
+  url: string;
+};
+
+export type FillResult = { status: 'filled'; sig: string; booking: string | null; contact: string };

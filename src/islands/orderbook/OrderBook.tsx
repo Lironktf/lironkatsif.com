@@ -1,11 +1,29 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import type { Bid, Level, MarketConfig, Trade } from './types';
+import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { Bid, BookSnapshot, FillResult, Level, MarketConfig, ServerOrder, Trade } from './types';
+import { ApiError, getBook, postBid, postOrder } from './api';
 import './orderbook.css';
 
 const WalletPay = lazy(() => import('./WalletPay'));
+const POLL_MS = 5000;
 
-const BIDS_KEY = 'lk.bids';
-const TRADES_KEY = 'lk.trades';
+/** Keeps the book on screen if the lazy payment panel fails to load or crashes. */
+class PayBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed)
+      return (
+        <div className="offline mono" role="status">
+          <b>payment rails failed to load</b>
+          <p>refresh the page and try again. your blocks stay held for a few minutes.</p>
+        </div>
+      );
+    return this.props.children;
+  }
+}
 
 const px = (n: number) => n.toFixed(2);
 // sizes are 15-minute blocks
@@ -14,21 +32,6 @@ const mins = (n: number) => `${Math.round(n * 15)}m`;
 const hhmmss = (ts: number) => new Date(ts).toISOString().slice(11, 19);
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-function load<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function save(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* private mode etc. — book still works for the session */
-  }
-}
 
 /** flashes a row green/red when the watched value changes */
 function useFlash(value: number): string {
@@ -82,41 +85,64 @@ function Row(props: {
 type TicketMode = { kind: 'buy'; level: Level; qty: number } | { kind: 'bid' } | null;
 type PayState =
   | { s: 'idle' }
-  | { s: 'checkout' }
-  | { s: 'confirmed'; sig: string }
-  | { s: 'halted' }
-  | { s: 'unconfigured' };
+  | { s: 'reserving' }
+  | { s: 'checkout'; order: ServerOrder }
+  | { s: 'confirmed'; sig: string; booking: string | null; contact: string }
+  | { s: 'halted'; msg?: string }
+  | { s: 'expired' }
+  | { s: 'error'; msg: string };
 
 export default function OrderBook(props: { asks: Level[]; config: MarketConfig }) {
   const { config } = props;
-  const [asks, setAsks] = useState<Level[]>(() =>
-    [...props.asks].sort((a, b) => a.price - b.price),
-  );
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [trades, setTrades] = useState<Trade[]>([]);
+  // ── live state from the server; static asks until the first poll lands ──
+  const [snap, setSnap] = useState<BookSnapshot | null>(null);
+  const [demoBids, setDemoBids] = useState<Bid[]>([]);
+  const [demoTrades, setDemoTrades] = useState<Trade[]>([]);
   const [demo, setDemo] = useState(false);
   const [ticket, setTicket] = useState<TicketMode>(null);
   const [pay, setPay] = useState<PayState>({ s: 'idle' });
-  const [bidForm, setBidForm] = useState({ price: '', size: '1', note: '' });
+  const [bidForm, setBidForm] = useState({ price: '', size: '1', note: '', contact: '', website: '' });
+  const [bidMsg, setBidMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // hydrate persisted state after mount (island is client-rendered but be safe)
+  const refresh = async () => {
+    try {
+      setSnap(await getBook());
+    } catch {
+      /* keep the last snapshot; next poll retries */
+    }
+  };
   useEffect(() => {
-    setBids(load<Bid[]>(BIDS_KEY, []));
-    setTrades(load<Trade[]>(TRADES_KEY, []));
+    refresh();
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, POLL_MS);
+    return () => clearInterval(t);
   }, []);
-  useEffect(() => save(BIDS_KEY, bids.filter((b) => !b.demo)), [bids]);
-  useEffect(() => save(TRADES_KEY, trades.filter((t) => !t.demo)), [trades]);
+
+  const halted = snap ? snap.halted : true;
+  const asks: Level[] = useMemo(
+    () => [...(snap?.levels ?? props.asks)].sort((a, b) => a.price - b.price),
+    [snap, props.asks],
+  );
+  const bids: Bid[] = useMemo(() => [...(snap?.bids ?? []), ...demoBids], [snap, demoBids]);
+  const trades: Trade[] = useMemo(
+    () =>
+      [...demoTrades, ...(snap?.trades ?? []).map((t) => ({ ...t, side: 'buy' as const }))].sort(
+        (a, b) => b.ts - a.ts,
+      ),
+    [snap, demoTrades],
+  );
 
   // ── demo feed: clearly labeled, never persisted ──────────────
   useEffect(() => {
     if (!demo) {
-      setBids((bs) => bs.filter((b) => !b.demo));
-      setTrades((ts) => ts.filter((t) => !t.demo));
+      setDemoBids([]);
+      setDemoTrades([]);
       return;
     }
     const timer = setInterval(() => {
       const roll = Math.random();
-      setBids((bs) => {
+      setDemoBids((bs) => {
         const best = asks.find((a) => a.size > 0)?.price ?? 1;
         if (roll < 0.4) {
           const price = Math.max(0.05, +(best * (0.4 + Math.random() * 0.5)).toFixed(2));
@@ -137,7 +163,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
         return bs;
       });
       if (roll >= 0.55) {
-        setTrades((ts) => {
+        setDemoTrades((ts) => {
           const best = asks.find((a) => a.size > 0)?.price ?? 1;
           const t: Trade = {
             id: uid(),
@@ -188,57 +214,50 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
     setTicket({ kind: 'buy', level, qty: 1 });
   };
 
-  const startCheckout = () => {
+  const startCheckout = async () => {
     if (ticket?.kind !== 'buy') return;
-    if (config.halted) {
+    if (halted) {
       setPay({ s: 'halted' });
       return;
     }
-    setPay(config.solAddress ? { s: 'checkout' } : { s: 'unconfigured' });
+    setPay({ s: 'reserving' });
+    try {
+      const order = await postOrder(ticket.level.price, ticket.qty);
+      setPay({ s: 'checkout', order });
+      refresh();
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'halted') setPay({ s: 'halted', msg: err.message });
+      else setPay({ s: 'error', msg: err instanceof Error ? err.message : 'could not place the order' });
+      refresh();
+    }
   };
 
-  const handleFill = (sig: string) => {
-    if (ticket?.kind !== 'buy') return;
-    setTrades((ts) => [
-      {
-        id: uid(),
-        side: 'buy',
-        price: ticket.level.price,
-        size: ticket.qty,
-        ts: Date.now(),
-        sig,
-      },
-      ...ts,
-    ]);
-    setAsks((as) =>
-      as.map((a) =>
-        a.price === ticket.level.price
-          ? { ...a, size: Math.max(0, a.size - ticket.qty) }
-          : a,
-      ),
-    );
-    setPay({ s: 'confirmed', sig });
+  const handleFill = (r: FillResult) => {
+    setPay({ s: 'confirmed', sig: r.sig, booking: r.booking, contact: r.contact });
+    refresh();
   };
 
   // ── bid flow ─────────────────────────────────────────────────
-  const placeBid = () => {
+  const placeBid = async () => {
     const price = Number(bidForm.price);
     const size = Number(bidForm.size);
-    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(size) || size <= 0) return;
-    const bid: Bid = { id: uid(), price, size, note: bidForm.note, ts: Date.now() };
-    setBids((bs) => [...bs, bid]);
-    const body = encodeURIComponent(
-      `Bid on ${config.ticker}\n\nprice: ${price} USDC per 15m\nsize: ${size} × 15m\nnote: ${bidForm.note || '—'}\n\n(reply to this email to negotiate / get filled)`,
-    );
-    window.location.href = `mailto:${config.email}?subject=${encodeURIComponent(
-      `[BID] ${size}×15m @ ${price} USDC`,
-    )}&body=${body}`;
-    setBidForm({ price: '', size: '1', note: '' });
-    setTicket(null);
+    if (!Number.isFinite(price) || price <= 0 || !Number.isInteger(size) || size <= 0) {
+      setBidMsg({ ok: false, text: 'enter a price and a whole number of blocks' });
+      return;
+    }
+    try {
+      await postBid({ price, size, note: bidForm.note, contact: bidForm.contact, website: bidForm.website });
+      setBidMsg({ ok: true, text: "bid placed. it's on the book, and I'll reach out if I fill it." });
+      setBidForm({ price: '', size: '1', note: '', contact: '', website: '' });
+      refresh();
+    } catch (err) {
+      setBidMsg({ ok: false, text: err instanceof Error ? err.message : 'could not place the bid' });
+    }
   };
 
   const closeTicket = () => {
     setPay({ s: 'idle' });
+    setBidMsg(null);
     setTicket(null);
   };
 
@@ -279,7 +298,7 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
           >
             demo feed {demo ? 'on' : 'off'}
           </button>
-          {config.halted ? (
+          {halted ? (
             <span className="live halt">
               <i /> halted
             </span>
@@ -438,28 +457,42 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                   buy {blk(ticket.qty)}×15m @ {px(ticket.level.price)}
                 </button>
               )}
+              {pay.s === 'reserving' && <p className="mono pay-loading">reserving your blocks…</p>}
               {pay.s === 'checkout' && (
-                <Suspense
-                  fallback={<p className="mono pay-loading">loading payment rails…</p>}
-                >
-                  <WalletPay
-                    amount={ticket.level.price * ticket.qty}
-                    label={`${config.ticker} — ${blk(ticket.qty)}×15m`}
-                    message={`${mins(ticket.qty)} of Liron's time @ ${px(ticket.level.price)} USDC per 15m`}
-                    config={config}
-                    onConfirmed={handleFill}
-                  />
-                </Suspense>
+                <PayBoundary>
+                  <Suspense
+                    fallback={<p className="mono pay-loading">loading payment rails…</p>}
+                  >
+                    <WalletPay
+                      order={pay.order}
+                      rpc={snap?.publicRpc ?? ''}
+                      onFilled={handleFill}
+                      onExpired={() => setPay({ s: 'expired' })}
+                    />
+                  </Suspense>
+                </PayBoundary>
+              )}
+              {pay.s === 'expired' && (
+                <div className="offline mono" role="status">
+                  <b>order expired</b>
+                  <p>the hold on those blocks ran out before a payment landed. start again if you still want them.</p>
+                </div>
+              )}
+              {pay.s === 'error' && (
+                <div className="offline mono" role="status">
+                  <b>order rejected</b>
+                  <p>{pay.msg}</p>
+                </div>
               )}
               {pay.s === 'confirmed' && (
                 <div className="filled mono" role="status">
                   <b>FILLED ✓</b>
                   <p>
                     payment confirmed on-chain.{' '}
-                    {config.bookingUrl ? (
-                      <a href={config.bookingUrl}>book your time here ↗</a>
+                    {pay.booking ? (
+                      <a href={pay.booking} target="_blank" rel="noopener">book your time here ↗</a>
                     ) : (
-                      <a href={`mailto:${config.email}?subject=${encodeURIComponent('[FILLED] booking my hours — tx ' + pay.sig)}`}>
+                      <a href={`mailto:${pay.contact}?subject=${encodeURIComponent('[FILLED] booking my time, tx ' + pay.sig)}`}>
                         email me to schedule ↗
                       </a>
                     )}
@@ -471,29 +504,13 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                 <div className="offline halted mono" role="status">
                   <b>trading halted</b>
                   <p>
-                    the market isn't open for business yet — no orders are
-                    being accepted.{' '}
+                    {pay.msg ?? "the market isn't open for business yet, no orders are being accepted."}{' '}
                     <a
                       href={`mailto:${config.email}?subject=${encodeURIComponent(
                         `[HALTED] interested in ${blk(ticket.qty)}×15m @ ${px(ticket.level.price)} USDC per 15m`,
                       )}`}
                     >
                       email me and I'll ping you at the opening bell ↗
-                    </a>
-                  </p>
-                </div>
-              )}
-              {pay.s === 'unconfigured' && (
-                <div className="offline mono" role="status">
-                  <b>payments offline</b>
-                  <p>
-                    the wallet isn't wired up yet —{' '}
-                    <a
-                      href={`mailto:${config.email}?subject=${encodeURIComponent(
-                        `[BUY] ${blk(ticket.qty)}×15m @ ${px(ticket.level.price)} USDC per 15m`,
-                      )}`}
-                    >
-                      email me and consider it filled ↗
                     </a>
                   </p>
                 </div>
@@ -507,8 +524,8 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
           {ticket?.kind === 'bid' && (
             <div className="ticket-body">
               <p className="note">
-                name a price below the market. bids are indicative — placing one
-                emails me, and I fill the ones I like.
+                name a price below the market. your bid goes on the public book
+                (your contact stays private), and I fill the ones I like.
               </p>
               <label className="line mono">
                 <span>price · usdc/15m</span>
@@ -531,10 +548,29 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
                 <span>what for?</span>
                 <input
                   placeholder="optional"
+                  maxLength={140}
                   value={bidForm.note}
                   onChange={(e) => setBidForm({ ...bidForm, note: e.target.value })}
                 />
               </label>
+              <label className="line mono">
+                <span>contact · private</span>
+                <input
+                  placeholder="email or @telegram"
+                  maxLength={120}
+                  value={bidForm.contact}
+                  onChange={(e) => setBidForm({ ...bidForm, contact: e.target.value })}
+                />
+              </label>
+              <input
+                className="hp"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={bidForm.website}
+                onChange={(e) => setBidForm({ ...bidForm, website: e.target.value })}
+              />
+              {bidMsg && <p className={`mono bid-msg ${bidMsg.ok ? 'ok' : 'bad'}`}>{bidMsg.text}</p>}
               <button type="button" className="exec bid-exec mono" onClick={placeBid}>
                 place bid
               </button>

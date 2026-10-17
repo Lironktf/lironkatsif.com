@@ -137,3 +137,11 @@
   text-underline-offset: 3px;
   text-decoration-color: var(--ink-faint);
 }
+
+.wp-ttl {
+  margin-left: auto;
+  align-self: center;
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}

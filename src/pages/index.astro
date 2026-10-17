@@ -11,14 +11,11 @@ const posts = (await getCollection('blog'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 5);
 
+// Display-only config. Prices, inventory, the halt switch, the receiving
+// wallet and the booking link all live on the server (see docs/MARKET.md).
 const marketConfig = {
   ticker: SITE.ticker,
   chain: SITE.chain,
-  halted: SITE.halted,
-  solAddress: SITE.solAddress,
-  usdcMint: SITE.usdcMint,
-  rpc: SITE.rpc,
-  bookingUrl: SITE.bookingUrl,
   email: SITE.email,
 };
 

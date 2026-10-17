@@ -446,3 +446,9 @@
   color: var(--ink-faint);
   line-height: 1.6;
 }
+
+/* honeypot for bots: present in the DOM, invisible to people */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+.bid-msg { font-size: 12px; margin-top: 8px; line-height: 1.5; }
+.bid-msg.ok { color: var(--bid, #3fb950); }
+.bid-msg.bad { color: var(--ask, #f85149); }
