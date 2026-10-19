@@ -166,3 +166,10 @@ test('reset-tape clears trades and restores inventory', async () => {
   assert.equal(b.trades.length, 0);
   assert.equal(b.levels.find((l) => l.price === cheapest)!.size, cheapSize);
 });
+
+test('Upstash HGETALL replies are normalized whether flat array or object', async () => {
+  const { normalizeHash } = await import('../src/lib/market/store');
+  assert.deepEqual(normalizeHash(['0.50', '2', '1.00', 1]), { '0.50': '2', '1.00': '1' });
+  assert.deepEqual(normalizeHash({ '0.50': 2 }), { '0.50': '2' });
+  assert.deepEqual(normalizeHash(null), {});
+});
