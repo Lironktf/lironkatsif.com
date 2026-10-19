@@ -66,8 +66,14 @@ export class Market {
     private notify: Notifier,
   ) {}
 
-  async isHalted(): Promise<boolean> {
+  /**
+   * Env halt (MARKET_HALTED != "false") and a missing recipient halt everyone.
+   * The desk halt (set from /admin) halts the public only: the owner can still
+   * trade, which is how the market is tested privately before opening.
+   */
+  async isHalted(owner = false): Promise<boolean> {
     if (this.cfg.envHalted || !this.cfg.recipient) return true;
+    if (owner) return false;
     return (await this.store.get(K.halt)) === '1';
   }
 
@@ -126,7 +132,8 @@ export class Market {
     if (n > max) throw new MarketError('rate_limited', 'slow down: too many requests, try again later');
   }
 
-  async placeBid(input: any, ip: string): Promise<PublicBid> {
+  async placeBid(input: any, ip: string, owner = false): Promise<PublicBid> {
+    if (await this.isHalted(owner)) throw new MarketError('halted', 'the market is closed right now');
     if (input?.website) throw new MarketError('bad_request', 'rejected'); // honeypot
     const price = Number(input?.price);
     const size = Number(input?.size);
@@ -155,8 +162,8 @@ export class Market {
     return pub;
   }
 
-  async createOrder(input: any, ip: string, newRef: () => string) {
-    if (await this.isHalted()) throw new MarketError('halted', 'trading is halted');
+  async createOrder(input: any, ip: string, newRef: () => string, owner = false) {
+    if (await this.isHalted(owner)) throw new MarketError('halted', 'trading is halted');
     const price = Number(input?.price);
     const qty = Number(input?.qty);
     const level = levels().find((l) => priceKey(l.price) === priceKey(price));
@@ -273,6 +280,11 @@ export class Market {
       throw new MarketError('bad_request', 'no such level');
     if (!Number.isInteger(size) || size < 0 || size > 1000) throw new MarketError('bad_request', 'bad size');
     await this.store.hset(K.inv, priceKey(price), String(size));
+  }
+  /** Clears the public tape and resets every level to asks.json (for post-test cleanup). */
+  async resetTape() {
+    await this.store.del(K.trades);
+    for (const l of levels()) await this.store.hset(K.inv, priceKey(l.price), String(l.size));
   }
   async setHalt(on: boolean) {
     if (on) await this.store.set(K.halt, '1');

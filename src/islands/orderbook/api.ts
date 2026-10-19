@@ -7,10 +7,24 @@ export class ApiError extends Error {
   }
 }
 
+/** Set by /admin after login (same origin). Present only in the owner's browser. */
+function ownerToken(): string {
+  try {
+    return sessionStorage.getItem('lk.admin') ?? '';
+  } catch {
+    return '';
+  }
+}
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  const tok = ownerToken();
   const res = await fetch(path, {
     ...init,
-    headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+    headers: {
+      'content-type': 'application/json',
+      ...(tok ? { authorization: `Bearer ${tok}` } : {}),
+      ...(init?.headers ?? {}),
+    },
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(body.error ?? 'error', body.message ?? `request failed (${res.status})`);

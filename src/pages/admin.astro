@@ -21,6 +21,7 @@ import Base from '../layouts/Base.astro';
           <button id="halt">halt now</button>
           <button id="unhalt">reopen</button>
           <button id="reload">refresh</button>
+          <button id="reset">reset tape</button>
           <button id="lock">lock</button>
         </span>
       </div>
@@ -79,7 +80,7 @@ import Base from '../layouts/Base.astro';
     $('hint').textContent = s.envHalted
       ? 'MARKET_HALTED is not "false" in the environment, so the market stays halted regardless of the buttons.'
       : s.haltOverride
-        ? 'halted from this desk. "reopen" resumes trading.'
+        ? 'halted for the public. you can still trade from the homepage in this browser (owner test mode). "reopen" opens it to everyone.'
         : '';
 
     $('inv').innerHTML =
@@ -152,6 +153,9 @@ import Base from '../layouts/Base.astro';
   $('halt').addEventListener('click', () => act({ action: 'halt' }));
   $('unhalt').addEventListener('click', () => act({ action: 'unhalt' }));
   $('reload').addEventListener('click', load);
+  $('reset').addEventListener('click', () => {
+    if (confirm('clear all trades from the public tape and restore every level from asks.json?')) act({ action: 'reset-tape' });
+  });
   $('lock').addEventListener('click', () => {
     sessionStorage.removeItem(KEY);
     location.reload();

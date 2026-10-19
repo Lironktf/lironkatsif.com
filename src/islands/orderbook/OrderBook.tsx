@@ -310,6 +310,12 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
         </div>
       </header>
 
+      {snap?.owner && (
+        <p className="demo-banner mono" role="status">
+          owner test mode: you're logged into the desk, so you can trade even while the public sees
+          the market halted. payments here are real.
+        </p>
+      )}
       {demo && (
         <p className="demo-banner mono" role="status">
           demo feed on — bids and prints tagged “demo” are simulated. the asks

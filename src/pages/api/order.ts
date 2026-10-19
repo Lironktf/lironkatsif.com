@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getMarket, json, errorResponse, clientIp } from '../../lib/market';
+import { getMarket, json, errorResponse, clientIp, isAdmin } from '../../lib/market';
 import { newReference, paymentUrl, recipientReady } from '../../lib/market/solana';
 import { MarketError } from '../../lib/market/market';
 
@@ -11,9 +11,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
     const { cfg, market } = getMarket();
     const body = await request.json().catch(() => ({}));
-    if (!(await market.isHalted()) && !(await recipientReady(cfg)))
+    const owner = isAdmin(request, cfg.adminToken);
+    if (!(await market.isHalted(owner)) && !(await recipientReady(cfg)))
       throw new MarketError('halted', 'payments offline: the receiving USDC account is not set up yet');
-    const order = await market.createOrder(body, clientIp(request, clientAddress), newReference);
+    const order = await market.createOrder(body, clientIp(request, clientAddress), newReference, owner);
     return json(
       {
         ref: order.ref,

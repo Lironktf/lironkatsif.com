@@ -46,6 +46,9 @@ export class MemoryStore implements Store {
   }
   async del(key: string) {
     this.kv.delete(key);
+    this.lists.delete(key);
+    this.hashes.delete(key);
+    this.sets.delete(key);
   }
   async incr(key: string, ttlSec: number) {
     const e = this.live(key);

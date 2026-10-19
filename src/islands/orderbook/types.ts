@@ -33,6 +33,7 @@ export type BookSnapshot = {
   bids: Bid[];
   trades: Trade[];
   publicRpc: string;
+  owner?: boolean;
 };
 
 export type ServerOrder = {

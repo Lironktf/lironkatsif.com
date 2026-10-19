@@ -139,3 +139,30 @@ test('admin can set inventory but not for unknown levels', async () => {
   assert.equal(await code(m.setInventory(0.37, 1)), 'bad_request');
   assert.equal(await code(m.setInventory(cheapest, -1)), 'bad_request');
 });
+
+test('owner test mode: desk halt blocks the public but not the owner; env halt blocks everyone', async () => {
+  const { m } = setup();
+  await m.setHalt(true);
+  assert.equal(await code(m.createOrder({ price: cheapest, qty: 1 }, 'pub', ref)), 'halted');
+  assert.equal(await code(m.placeBid({ price: 0.1, size: 1, contact: 'c' }, 'pub')), 'halted');
+  assert.equal(await code(m.createOrder({ price: cheapest, qty: 1 }, 'own', ref, true)), 'ok');
+  assert.equal(await code(m.placeBid({ price: 0.1, size: 1, contact: 'c' }, 'own', true)), 'ok');
+  assert.equal(await m.isHalted(false), true);
+  assert.equal(await m.isHalted(true), false);
+  const env = setup({ envHalted: true }).m;
+  assert.equal(await code(env.createOrder({ price: cheapest, qty: 1 }, 'own', ref, true)), 'halted');
+  const norecip = setup({ recipient: '' }).m;
+  assert.equal(await code(norecip.createOrder({ price: cheapest, qty: 1 }, 'own', ref, true)), 'halted');
+});
+
+test('reset-tape clears trades and restores inventory', async () => {
+  const { m, payments } = setup();
+  const o = await m.createOrder({ price: cheapest, qty: 1 }, 'ip', ref);
+  payments.set(o.ref, 'SIGR');
+  await m.confirm(o.ref);
+  assert.equal((await m.book()).trades.length, 1);
+  await m.resetTape();
+  const b = await m.book();
+  assert.equal(b.trades.length, 0);
+  assert.equal(b.levels.find((l) => l.price === cheapest)!.size, cheapSize);
+});
