@@ -14,7 +14,9 @@ export const POST: APIRoute = async ({ request }) => {
     return json({
       status: 'filled',
       sig: r.order.sig,
-      booking: cfg.bookingUrl || null,
+      // Only ever hand out a real https link. Anything else (e.g. an API key
+      // pasted into BOOKING_URL by mistake) falls back to "email me".
+      booking: /^https:\/\/\S+$/.test(cfg.bookingUrl) ? cfg.bookingUrl : null,
       contact: cfg.contactEmail,
     });
   } catch (err) {
