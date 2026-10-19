@@ -173,3 +173,17 @@ test('Upstash HGETALL replies are normalized whether flat array or object', asyn
   assert.deepEqual(normalizeHash({ '0.50': 2 }), { '0.50': '2' });
   assert.deepEqual(normalizeHash(null), {});
 });
+
+test('cancel releases the hold immediately; a late payment after cancel still fills', async () => {
+  const { m, payments } = setup();
+  const o = await m.createOrder({ price: cheapest, qty: 1 }, 'ip', ref);
+  assert.equal((await m.book()).levels.find((l) => l.price === cheapest)!.size, cheapSize - 1);
+  await m.cancelOrder(o.ref);
+  assert.equal((await m.book()).levels.find((l) => l.price === cheapest)!.size, cheapSize);
+  payments.set(o.ref, 'LATE2');
+  assert.equal((await m.confirm(o.ref)).status, 'filled');
+  const a = await m.createOrder({ price: cheapest, qty: 1 }, 'ip2', ref);
+  void a;
+  await m.cancelAllPending();
+  assert.equal((await m.adminState()).pendingOrders.length, 0);
+});

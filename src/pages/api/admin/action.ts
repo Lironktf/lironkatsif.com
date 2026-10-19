@@ -13,6 +13,7 @@ export const POST: APIRoute = async ({ request }) => {
     else if (a.action === 'halt') await market.setHalt(true);
     else if (a.action === 'unhalt') await market.setHalt(false);
     else if (a.action === 'reset-tape') await market.resetTape();
+    else if (a.action === 'cancel-pending') await market.cancelAllPending();
     else return json({ error: 'bad_request', message: 'unknown action' }, 400);
     return json({ ok: true, state: await market.adminState() });
   } catch (err) {

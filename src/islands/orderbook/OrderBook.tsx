@@ -1,7 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Bid, BookSnapshot, FillResult, Level, MarketConfig, ServerOrder, Trade } from './types';
-import { ApiError, getBook, postBid, postOrder } from './api';
+import { ApiError, getBook, postBid, postCancel, postOrder } from './api';
 import './orderbook.css';
 
 const WalletPay = lazy(() => import('./WalletPay'));
@@ -256,6 +256,8 @@ export default function OrderBook(props: { asks: Level[]; config: MarketConfig }
   };
 
   const closeTicket = () => {
+    // release the reserved blocks if the order was never paid
+    if (pay.s === 'checkout') postCancel(pay.order.ref).catch(() => {}).finally(refresh);
     setPay({ s: 'idle' });
     setBidMsg(null);
     setTicket(null);

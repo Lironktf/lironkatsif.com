@@ -281,6 +281,22 @@ export class Market {
     if (!Number.isInteger(size) || size < 0 || size > 1000) throw new MarketError('bad_request', 'bad size');
     await this.store.hset(K.inv, priceKey(price), String(size));
   }
+  /**
+   * Releases an unpaid order's hold now (buyer pressed cancel). If a payment
+   * still lands later, confirm() fills it anyway, like any late payment.
+   */
+  async cancelOrder(ref: string) {
+    const o = await this.getOrder(String(ref ?? ''));
+    if (!o || o.status !== 'pending') return;
+    o.expiresAt = 0;
+    await this.saveOrder(o);
+    await this.sweepExpired();
+  }
+  /** Owner tool: release every unpaid hold now. */
+  async cancelAllPending() {
+    for (const ref of await this.store.smembers(K.pending)) await this.cancelOrder(ref);
+  }
+
   /** Clears the public tape and resets every level to asks.json (for post-test cleanup). */
   async resetTape() {
     await this.store.del(K.trades);

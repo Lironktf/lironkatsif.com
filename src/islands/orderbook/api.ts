@@ -41,3 +41,5 @@ export const postConfirm = (ref: string) =>
     method: 'POST',
     body: JSON.stringify({ ref }),
   });
+export const postCancel = (ref: string) =>
+  call<{ ok: true }>('/api/cancel', { method: 'POST', body: JSON.stringify({ ref }) });

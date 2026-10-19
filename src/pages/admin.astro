@@ -22,6 +22,7 @@ import Base from '../layouts/Base.astro';
           <button id="unhalt">reopen</button>
           <button id="reload">refresh</button>
           <button id="reset">reset tape</button>
+          <button id="release">release holds</button>
           <button id="lock">lock</button>
         </span>
       </div>
@@ -153,6 +154,7 @@ import Base from '../layouts/Base.astro';
   $('halt').addEventListener('click', () => act({ action: 'halt' }));
   $('unhalt').addEventListener('click', () => act({ action: 'unhalt' }));
   $('reload').addEventListener('click', load);
+  $('release').addEventListener('click', () => act({ action: 'cancel-pending' }));
   $('reset').addEventListener('click', () => {
     if (confirm('clear all trades from the public tape and restore every level from asks.json?')) act({ action: 'reset-tape' });
   });
