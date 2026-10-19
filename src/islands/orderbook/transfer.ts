@@ -20,6 +20,12 @@ export async function buildUsdcTransfer(connection: Connection, payer: PublicKey
   const to = getAssociatedTokenAddressSync(mint, recipient, true);
   const raw = BigInt(Math.round(order.amount * 10 ** USDC_DECIMALS));
 
+  if (payer.equals(recipient))
+    throw new Error("that's the receiving wallet. pay from a different wallet");
+  // Every Solana transaction needs a little SOL for the network fee, even a USDC transfer.
+  if ((await connection.getBalance(payer, 'confirmed')) < 10_000)
+    throw new Error('this wallet needs a little SOL (about 0.001) for the network fee');
+
   let balance: bigint;
   try {
     balance = (await getAccount(connection, from)).amount;

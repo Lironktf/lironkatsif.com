@@ -41,7 +41,7 @@ type Status =
 
 function humanize(err: unknown): string {
   const m = err instanceof Error ? err.message : String(err);
-  if (/insufficient/i.test(m)) return m.toLowerCase();
+  if (/insufficient|receiving wallet|needs a little sol/i.test(m)) return m.toLowerCase();
   if (/rejected|declined|cancel/i.test(m)) return 'you declined the transaction';
   if (/blockhash|network|fetch/i.test(m)) return 'network hiccup, try again';
   return m.length > 90 ? m.slice(0, 90) + '…' : m;
