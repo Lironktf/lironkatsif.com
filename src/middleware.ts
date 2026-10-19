@@ -9,7 +9,7 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
     const e = err as Error;
     console.error('[api crash]', e);
     return new Response(
-      JSON.stringify({ error: 'server_error', detail: `${e?.name}: ${e?.message}`.slice(0, 300) }),
+      JSON.stringify({ error: 'server_error', message: 'something went wrong, try again' }),
       { status: 500, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } },
     );
   }
