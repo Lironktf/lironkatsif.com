@@ -187,3 +187,17 @@ test('cancel releases the hold immediately; a late payment after cancel still fi
   await m.cancelAllPending();
   assert.equal((await m.adminState()).pendingOrders.length, 0);
 });
+
+test('verifier accepts the real MetaMask payment (ComputeBudget appended last) and rejects mismatches', async () => {
+  const { receivedBaseUnits, mentionsKey } = await import('../src/lib/market/solana');
+  const fs = await import('node:fs');
+  const tx = JSON.parse(fs.readFileSync(new URL('./fixtures/metamask-payment.json', import.meta.url), 'utf8'));
+  const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  const ME = 'GQWyY1KZUp4ZXWh3mEMc83ibA4fWHRKcPKc9qMfEeVWy';
+  assert.equal(receivedBaseUnits(tx, ME, USDC), 500000n);           // exactly 0.50 USDC
+  assert.equal(mentionsKey(tx, '4kAgYjfEAJ5D8PnY4YPmedng59LfNjWDmwBQwnTd23eB'), true);
+  assert.equal(mentionsKey(tx, 'GsLQCW51HTmXBUiFmrAcB1mZX2R4exjRif9hv2gEDARP'), false);
+  assert.equal(receivedBaseUnits(tx, 'oFKJRWn9VNW8MHWmtNj7BPZkTfPNdhx41NAqZHWxZNC', USDC), -500000n); // sender went down
+  assert.equal(receivedBaseUnits(tx, ME, 'So11111111111111111111111111111111111111112'), 0n); // wrong mint
+  assert.equal(receivedBaseUnits({ ...tx, meta: { ...tx.meta, err: { InstructionError: [2, 'x'] } } }, ME, USDC), null);
+});

@@ -9,7 +9,7 @@
 
 import { createSolanaRpc, address, getAddressDecoder } from '@solana/kit';
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import { encodeURL, findReference, validateTransfer, FindReferenceError } from '@solana/pay';
+import { encodeURL, findReference, FindReferenceError } from '@solana/pay';
 import { randomBytes } from 'node:crypto';
 import type { MarketConfig } from './config';
 import type { Verifier } from './market';
@@ -32,6 +32,31 @@ export function paymentUrl(cfg: MarketConfig, o: { ref: string; amount: number; 
   }).toString();
 }
 
+/**
+ * How much of `mint` (in base units) the recipient's balance grew by in this
+ * transaction, from the RPC's pre/post token balances. Order-independent: it
+ * doesn't care which instruction did the transfer, so wallets that add their
+ * own instructions (MetaMask appends ComputeBudget, others add guard
+ * instructions) still verify. Returns null if the transaction failed.
+ */
+export function receivedBaseUnits(tx: any, recipient: string, mint: string): bigint | null {
+  if (!tx?.meta || tx.meta.err != null) return null;
+  const sum = (list: any[] | undefined) =>
+    (list ?? [])
+      .filter((b) => b.owner === recipient && b.mint === mint)
+      .reduce<bigint>((acc, b) => acc + BigInt(b.uiTokenAmount.amount), 0n);
+  return sum(tx.meta.postTokenBalances) - sum(tx.meta.preTokenBalances);
+}
+
+/** True if `key` is one of the transaction's account keys (the order reference). */
+export function mentionsKey(tx: any, key: string): boolean {
+  const keys: any[] = tx?.transaction?.message?.accountKeys ?? [];
+  const loaded = [...(tx?.meta?.loadedAddresses?.readonly ?? []), ...(tx?.meta?.loadedAddresses?.writable ?? [])];
+  return [...keys.map((k) => (typeof k === 'string' ? k : k.pubkey)), ...loaded].includes(key);
+}
+
+const USDC_DECIMALS = 6;
+
 export function solanaVerifier(cfg: MarketConfig): Verifier {
   return async (ref, amount) => {
     const rpc = createSolanaRpc(cfg.rpc);
@@ -42,16 +67,16 @@ export function solanaVerifier(cfg: MarketConfig): Verifier {
       if (err instanceof FindReferenceError) return null; // not paid yet
       throw err; // RPC trouble: the caller retries on the next poll
     }
-    try {
-      await validateTransfer(
-        rpc,
-        signature,
-        { recipient: address(cfg.recipient), amount, splToken: address(cfg.usdcMint), reference: address(ref) },
-        { commitment: 'confirmed' },
-      );
-    } catch (err) {
-      throw new MarketError('invalid_payment', `transfer found but invalid: ${(err as Error).message}`);
-    }
+    const tx = await rpc
+      .getTransaction(signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' })
+      .send();
+    if (!tx) return null; // indexed but not yet fetchable: retry next poll
+    const want = BigInt(Math.round(amount * 10 ** USDC_DECIMALS));
+    const got = receivedBaseUnits(tx, cfg.recipient, cfg.usdcMint);
+    if (!mentionsKey(tx, ref)) throw new MarketError('invalid_payment', 'transaction does not carry this order reference');
+    if (got == null) throw new MarketError('invalid_payment', 'transaction failed on-chain');
+    if (got < want)
+      throw new MarketError('invalid_payment', `received ${got} base units, expected at least ${want}`);
     return { sig: String(signature) };
   };
 }
