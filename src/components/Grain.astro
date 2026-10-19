@@ -1,0 +1,107 @@
+---
+// Animated film grain behind the page. Very faint at rest; moving the mouse
+// stirs it up around the cursor, then it settles back. One WebGL quad at half
+// resolution. Static (single frame, no mouse) under prefers-reduced-motion.
+---
+
+<canvas class="grain" aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.grain');
+  const gl = canvas?.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
+
+  if (canvas && gl) {
+    const SCALE = 0.5; // grain cell = 2 css px
+    const frag = `
+      precision highp float;
+      uniform vec2 uRes, uMouse;
+      uniform float uSeed, uHeat, uRadius;
+      float h(vec2 p){
+        vec3 q = fract(vec3(p.xyx + uSeed) * .1031);
+        q += dot(q, q.yzx + 33.33);
+        return fract((q.x + q.y) * q.z);
+      }
+      void main(){
+        float g = h(gl_FragCoord.xy);
+        float d = distance(gl_FragCoord.xy, uMouse);
+        float near = exp(-(d*d) / (uRadius*uRadius));
+        float a = .03 + uHeat * near * .14;
+        gl_FragColor = vec4(vec3(.92, .9, .86), g * a);
+      }`;
+    const sh = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}'));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, frag));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    const U = (n: string) => gl.getUniformLocation(prog, n);
+    const uRes = U('uRes'), uMouse = U('uMouse'), uSeed = U('uSeed'), uHeat = U('uHeat'), uRadius = U('uRadius');
+
+    const resize = () => {
+      canvas.width = Math.max(1, Math.round(innerWidth * SCALE));
+      canvas.height = Math.max(1, Math.round(innerHeight * SCALE));
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    resize();
+    addEventListener('resize', resize);
+
+    // heat rises with mouse speed and decays when the mouse rests
+    let mx = -1e4, my = -1e4, heat = 0, lastX = 0, lastY = 0;
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const v = Math.hypot(e.clientX - lastX, e.clientY - lastY);
+      lastX = e.clientX; lastY = e.clientY;
+      mx = e.clientX * SCALE;
+      my = (innerHeight - e.clientY) * SCALE;
+      heat = Math.min(1, heat + v / 250);
+    }, { passive: true });
+
+    const draw = () => {
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform2f(uMouse, mx, my);
+      gl.uniform1f(uSeed, Math.random() * 100);
+      gl.uniform1f(uHeat, heat);
+      gl.uniform1f(uRadius, 180 * SCALE);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      draw();
+    } else {
+      // grain looks like film at ~24fps; no need to burn 60
+      let last = 0;
+      const loop = (t: number) => {
+        if (t - last > 41) {
+          last = t;
+          heat *= 0.93;
+          draw();
+        }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+  }
+</script>
+
+<style>
+  .grain {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1;
+    image-rendering: pixelated;
+  }
+</style>

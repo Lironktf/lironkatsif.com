@@ -12,6 +12,7 @@ interface Props {
 
 const { title = SITE.title, description = SITE.description, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, SITE.url);
+import Grain from '../components/Grain.astro';
 ---
 
 <!doctype html>
@@ -33,6 +34,7 @@ const canonical = new URL(Astro.url.pathname, SITE.url);
     {noindex && <meta name="robots" content="noindex, nofollow" />}
   </head>
   <body>
+    <Grain />
     <header class="page top">
       <a href="/" class="mono glyph" aria-label="Home">LK<span>▞</span></a>
       <nav class="mono" aria-label="Main">
