@@ -5,7 +5,7 @@ import { MemoryStore } from '../src/lib/market/store';
 import asks from '../src/data/asks.json';
 
 const cfg: any = {
-  cluster: 'devnet', envHalted: false, recipient: 'oFKJRWn9VNW8MHWmtNj7BPZkTfPNdhx41NAqZHWxZNC',
+  cluster: 'devnet', envHalted: false, recipient: 'GQWyY1KZUp4ZXWh3mEMc83ibA4fWHRKcPKc9qMfEeVWy',
   usdcMint: 'x', rpc: 'x', bookingUrl: 'https://cal.com/x', contactEmail: 'a@b.c', adminToken: 't',
   orderTtlSec: 900,
 };
